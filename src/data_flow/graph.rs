@@ -60,15 +60,15 @@ impl<S> Graph<S> {
 		self.remove_node(region.end());
 	}
 
-	/// Adds a [`Node`] with a [`Region`] to the graph and returns its [`NodeId`].
+	/// Adds a [`Node::Compound`] to the graph and returns its [`NodeId`] and [`Region`].
 	#[must_use]
-	pub fn add_compound(&mut self, compound: Compound) -> NodeId {
+	pub fn add_compound(&mut self, compound: Compound) -> (NodeId, Region) {
 		let id = self.add_node(compound.into());
 		let region = self.add_region();
 
 		self.regions.insert(id, [region].into());
 
-		id
+		(id, region)
 	}
 
 	/// Adds a [`Compound::Gamma`] node with [`Region`]s to the graph and returns its [`NodeId`].
