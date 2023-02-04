@@ -56,8 +56,8 @@ impl<S> Graph<S> {
 
 	/// Removes a [`Region`] from the graph.
 	pub fn remove_region(&mut self, region: Region) {
-		self.remove_node(region.start());
-		self.remove_node(region.end());
+		self.nodes.remove(region.start());
+		self.nodes.remove(region.end());
 	}
 
 	/// Adds a [`Node::Compound`] to the graph and returns its [`NodeId`] and [`Region`].
