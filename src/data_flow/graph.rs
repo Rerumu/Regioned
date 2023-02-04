@@ -48,8 +48,8 @@ impl<S> Graph<S> {
 	/// Adds a [`Region`] to the graph and returns it.
 	#[must_use]
 	pub fn add_region(&mut self) -> Region {
-		let start = self.add_node(Node::Marker(Marker::Start));
-		let end = self.add_node(Node::Marker(Marker::End));
+		let start = self.add_node(Marker::Start.into());
+		let end = self.add_node(Marker::End.into());
 
 		Region::new(start, end)
 	}
@@ -63,7 +63,7 @@ impl<S> Graph<S> {
 	/// Adds a [`Node`] with a [`Region`] to the graph and returns its [`NodeId`].
 	#[must_use]
 	pub fn add_compound(&mut self, compound: Compound) -> NodeId {
-		let id = self.add_node(Node::Compound(compound));
+		let id = self.add_node(compound.into());
 		let region = self.add_region();
 
 		self.regions.insert(id, [region].into());
@@ -77,7 +77,7 @@ impl<S> Graph<S> {
 	where
 		I: IntoIterator<Item = Region>,
 	{
-		let id = self.add_node(Node::Compound(Compound::Gamma));
+		let id = self.add_node(Compound::Gamma.into());
 		let regions = regions.into_iter().collect();
 
 		self.regions.insert(id, regions);

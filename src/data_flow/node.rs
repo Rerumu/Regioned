@@ -120,9 +120,15 @@ pub enum Node<S> {
 	Compound(Compound),
 }
 
-impl<S> From<S> for Node<S> {
-	fn from(simple: S) -> Self {
-		Self::Simple(simple)
+impl<S> From<Marker> for Node<S> {
+	fn from(value: Marker) -> Self {
+		Self::Marker(value)
+	}
+}
+
+impl<S> From<Compound> for Node<S> {
+	fn from(value: Compound) -> Self {
+		Self::Compound(value)
 	}
 }
 
