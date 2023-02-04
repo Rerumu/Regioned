@@ -104,7 +104,9 @@ impl<S> Graph<S> {
 
 	/// Sets a connection between two nodes and ports.
 	pub fn set_connection(&mut self, from: Link, to: Link) {
-		self.predecessors[to.node()][to.port().index()] = from;
+		let port = usize::from(to.port());
+
+		self.predecessors[to.node()][port] = from;
 	}
 }
 

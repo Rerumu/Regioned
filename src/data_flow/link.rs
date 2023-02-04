@@ -1,3 +1,5 @@
+use std::num::TryFromIntError;
+
 use super::node::NodeId;
 
 /// An index of a port to either an input or output.
@@ -9,16 +11,28 @@ pub struct Port {
 impl Port {
 	/// Creates a new [`Port`] from an index.
 	#[must_use]
-	pub fn new(index: usize) -> Self {
-		let index = u16::try_from(index).expect("Port index too large");
-
+	pub const fn new(index: u16) -> Self {
 		Self { index }
 	}
 
 	/// Returns the index of the [`Port`].
 	#[must_use]
-	pub fn index(self) -> usize {
-		self.index.into()
+	pub const fn index(self) -> u16 {
+		self.index
+	}
+}
+
+impl From<Port> for usize {
+	fn from(port: Port) -> Self {
+		port.index.into()
+	}
+}
+
+impl TryFrom<usize> for Port {
+	type Error = TryFromIntError;
+
+	fn try_from(value: usize) -> Result<Self, Self::Error> {
+		u16::try_from(value).map(|index| Self { index })
 	}
 }
 

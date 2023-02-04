@@ -5,7 +5,7 @@ use std::{
 
 use crate::data_flow::{
 	graph::Graph,
-	link::{Link, Port},
+	link::Link,
 	node::{Compound, Node, NodeId, Region},
 };
 
@@ -56,7 +56,7 @@ impl<S> GraphExt<S> for Graph<S> {
 			.copied()
 			.enumerate()
 			.try_for_each(|(i, from)| {
-				let to = Link::new(to, Port::new(i));
+				let to = Link::new(to, i.try_into().unwrap());
 
 				self.add_link(w, from, to)
 			})
@@ -88,7 +88,7 @@ impl<'a, S> Writer<'a, S> {
 
 			for link in list {
 				let face = self.graph.get_face_outgoing(link.node());
-				let last = link.port().index();
+				let last = link.port().into();
 
 				self.info_map.entry(face).or_default().set_outgoing(last);
 			}
