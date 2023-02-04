@@ -85,14 +85,14 @@ impl<S> Graph<S> {
 		id
 	}
 
-	/// Removes a [`Node`] with regions from the graph and returns it.
-	pub fn remove_compound(&mut self, id: NodeId) -> Option<Node<S>> {
+	/// Removes a [`Node::Compound`] with regions from the graph and returns it.
+	pub fn remove_compound(&mut self, id: NodeId) -> Option<Compound> {
 		for &region in self.regions.get(id)? {
 			self.nodes.remove(region.start());
 			self.nodes.remove(region.end());
 		}
 
-		self.nodes.remove(id)
+		self.nodes.remove(id).as_ref().and_then(Node::as_compound)
 	}
 
 	/// Sets the number of predecessors for a node.
