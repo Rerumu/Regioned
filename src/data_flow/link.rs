@@ -20,6 +20,11 @@ impl Port {
 	pub const fn index(self) -> u16 {
 		self.index
 	}
+
+	/// Returns an iterator over all [`Port`]s starting from the current one.
+	pub fn iter(self) -> impl Iterator<Item = Self> {
+		(self.index..).map(Self::new)
+	}
 }
 
 impl From<Port> for usize {
@@ -61,5 +66,10 @@ impl Link {
 	#[must_use]
 	pub const fn port(self) -> Port {
 		self.port
+	}
+
+	/// Returns an iterator over all [`Link`]s starting from the current one.
+	pub fn iter(self) -> impl Iterator<Item = Self> {
+		self.port.iter().map(move |p| Link::new(self.node, p))
 	}
 }
