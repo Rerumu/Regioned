@@ -4,14 +4,36 @@ use std::{
 	num::NonZeroUsize,
 };
 
+#[derive(Clone, Copy)]
+pub enum Face {
+	Incoming,
+	Outgoing,
+}
+
+impl Face {
+	pub fn direction(self) -> &'static str {
+		match self {
+			Self::Incoming => "n",
+			Self::Outgoing => "s",
+		}
+	}
+
+	pub fn name(self) -> &'static str {
+		match self {
+			Self::Incoming => "in",
+			Self::Outgoing => "out",
+		}
+	}
+}
+
 struct Ports {
-	prefix: &'static str,
+	face: Face,
 	len: NonZeroUsize,
 }
 
 impl Ports {
-	fn new(prefix: &'static str, len: usize) -> Option<Self> {
-		NonZeroUsize::new(len).map(|len| Self { prefix, len })
+	fn new(face: Face, len: usize) -> Option<Self> {
+		NonZeroUsize::new(len).map(|len| Self { face, len })
 	}
 }
 
@@ -24,7 +46,7 @@ impl Display for Ports {
 				write!(f, "| ")?;
 			}
 
-			write!(f, "<{}{i}>{i}", self.prefix)?;
+			write!(f, "<{}{i}>{i}", self.face.name())?;
 		}
 
 		write!(f, "}}")
@@ -52,13 +74,13 @@ impl Information {
 	{
 		write!(w, "[label = \"{{")?;
 
-		if let Some(ports) = Ports::new("in", self.incoming) {
+		if let Some(ports) = Ports::new(Face::Incoming, self.incoming) {
 			write!(w, "{ports} | ")?;
 		}
 
 		write!(w, "{label}")?;
 
-		if let Some(ports) = Ports::new("out", self.outgoing) {
+		if let Some(ports) = Ports::new(Face::Outgoing, self.outgoing) {
 			write!(w, " | {ports}")?;
 		}
 

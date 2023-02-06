@@ -10,7 +10,7 @@ use crate::data_flow::{
 };
 
 use super::{
-	node::Information,
+	node::{Face, Information},
 	region::{Labeled, Named},
 	tooltip::{Ref, Tooltip},
 };
@@ -26,13 +26,20 @@ trait GraphExt<S> {
 		self.get_face_region(id).map_or(id, Region::end)
 	}
 
-	fn add_link(&self, w: &mut dyn Write, from: Link, to: Link) -> Result<()> {
-		let node_a = self.get_face_outgoing(from.node());
-		let node_b = self.get_face_incoming(to.node());
-		let port_a = from.port().index();
-		let port_b = to.port().index();
+	fn add_link_part(&self, w: &mut dyn Write, link: Link, face: Face) -> Result<()> {
+		let node = self.get_face_outgoing(link.node());
+		let port = link.port().index();
+		let side = face.name();
+		let direction = face.direction();
 
-		writeln!(w, "{node_a}:o{port_a}:s -> {node_b}:i{port_b}:n;")
+		write!(w, "{node}:{side}{port}:{direction}")
+	}
+
+	fn add_link(&self, w: &mut dyn Write, from: Link, to: Link) -> Result<()> {
+		self.add_link_part(w, from, Face::Outgoing)?;
+		write!(w, " -> ")?;
+		self.add_link_part(w, to, Face::Incoming)?;
+		writeln!(w, ";")
 	}
 
 	fn add_links_redirected(&self, w: &mut dyn Write, to: NodeId, from: NodeId) -> Result<()>;
