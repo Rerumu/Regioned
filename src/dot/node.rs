@@ -63,11 +63,11 @@ pub struct Information {
 
 impl Information {
 	pub fn set_incoming(&mut self, value: usize) {
-		self.incoming = self.incoming.max(value + 1);
+		self.incoming = self.incoming.max(value);
 	}
 
 	pub fn set_outgoing(&mut self, value: usize) {
-		self.outgoing = self.outgoing.max(value + 1);
+		self.outgoing = self.outgoing.max(value);
 	}
 
 	pub fn write<T>(&self, w: &mut dyn Write, id: NodeId, label: T) -> IResult<()>

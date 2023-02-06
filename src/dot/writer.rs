@@ -98,7 +98,7 @@ impl<'a, S> Writer<'a, S> {
 
 			for link in list {
 				let face = self.graph.get_face_outgoing(link.node());
-				let last = link.port().into();
+				let last = usize::from(link.port()) + 1;
 
 				self.information.entry(face).or_default().set_outgoing(last);
 			}
