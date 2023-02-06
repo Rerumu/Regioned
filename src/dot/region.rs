@@ -1,45 +1,7 @@
 use std::{
-	fmt::{Display, Formatter, Result as FResult},
-	io::{Result as IResult, Write},
+	fmt::Display,
+	io::{Result, Write},
 };
-
-#[derive(Clone, Copy)]
-struct Color(pub Named);
-
-impl Display for Color {
-	fn fmt(&self, f: &mut Formatter<'_>) -> FResult {
-		let color = match self.0 {
-			Named::Gamma => "#8b81e8",
-			Named::Theta => "#bb84ca",
-			Named::Lambda => "#dde881",
-			Named::Phi => "#e6b79a",
-			Named::Then => "#89b7d7",
-			Named::Reachable => "#81e8bf",
-			Named::NotReachable => "#e881aa",
-		};
-
-		write!(f, r#""{color}""#)
-	}
-}
-
-#[derive(Clone, Copy)]
-struct Label(pub Named);
-
-impl Display for Label {
-	fn fmt(&self, f: &mut Formatter<'_>) -> FResult {
-		let name = match self.0 {
-			Named::Gamma => "Gamma",
-			Named::Theta => "Theta",
-			Named::Lambda => "Lambda",
-			Named::Phi => "Phi",
-			Named::Then => "Then",
-			Named::Reachable => "Reachable",
-			Named::NotReachable => "Not Reachable",
-		};
-
-		write!(f, r#""{name}""#)
-	}
-}
 
 #[derive(Clone, Copy)]
 pub enum Named {
@@ -53,14 +15,38 @@ pub enum Named {
 }
 
 impl Named {
-	pub fn write<I, M>(self, w: &mut dyn Write, id: I, mut nested: M) -> IResult<()>
+	fn color(self) -> &'static str {
+		match self {
+			Self::Gamma => "#8b81e8",
+			Self::Theta => "#bb84ca",
+			Self::Lambda => "#dde881",
+			Self::Phi => "#e6b79a",
+			Self::Then => "#89b7d7",
+			Self::Reachable => "#81e8bf",
+			Self::NotReachable => "#e881aa",
+		}
+	}
+
+	fn label(self) -> &'static str {
+		match self {
+			Self::Gamma => "Gamma",
+			Self::Theta => "Theta",
+			Self::Lambda => "Lambda",
+			Self::Phi => "Phi",
+			Self::Then => "Then",
+			Self::Reachable => "Reachable",
+			Self::NotReachable => "Not Reachable",
+		}
+	}
+
+	pub fn write<I, M>(self, w: &mut dyn Write, id: I, mut nested: M) -> Result<()>
 	where
 		I: Display,
-		M: FnMut(&mut dyn Write) -> IResult<()>,
+		M: FnMut(&mut dyn Write) -> Result<()>,
 	{
 		writeln!(w, "subgraph cluster_{id} {{")?;
-		writeln!(w, "fillcolor = {};", Color(self))?;
-		writeln!(w, "label = {};", Label(self))?;
+		writeln!(w, r#"fillcolor = "{}";"#, self.color())?;
+		writeln!(w, r#"label = "{}";"#, self.label())?;
 
 		nested(w)?;
 
@@ -78,11 +64,11 @@ impl<L> Labeled<L> {
 		Self { typ, label }
 	}
 
-	pub fn write<I, M>(&self, w: &mut dyn Write, id: I, mut nested: M) -> IResult<()>
+	pub fn write<I, M>(&self, w: &mut dyn Write, id: I, mut nested: M) -> Result<()>
 	where
 		L: Display,
 		I: Display,
-		M: FnMut(&mut dyn Write) -> IResult<()>,
+		M: FnMut(&mut dyn Write) -> Result<()>,
 	{
 		self.typ.write(w, id, |w| {
 			writeln!(w, r#"label = "{}";"#, self.label)?;
