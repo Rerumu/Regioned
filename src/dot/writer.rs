@@ -108,7 +108,7 @@ impl<'a, S> Writer<'a, S> {
 	fn add_bad_node(&self, w: &mut dyn Write, id: NodeId) -> Result<()> {
 		write!(w, "{id} ")?;
 
-		self.information[&id].write(w, "BAD NODE")
+		self.information[&id].write(w, id, "BAD NODE")
 	}
 }
 
@@ -126,7 +126,7 @@ where
 
 	fn add_gamma(&mut self, w: &mut dyn Write, regions: &[Region], id: NodeId) -> Result<()> {
 		Named::Gamma.write(w, id, |w| {
-			self.information[&id].write(w, "Selector")?;
+			self.information[&id].write(w, id, "Selector")?;
 
 			regions.iter().enumerate().try_for_each(|(i, v)| {
 				Labeled::new(Named::Then, i).write(w, v.start(), |w| {
@@ -176,12 +176,12 @@ where
 
 		match *node {
 			Node::Simple(ref s) => {
-				self.information[&id].write(w, Ref(s))?;
+				self.information[&id].write(w, id, Ref(s))?;
 
 				self.graph.add_links_incoming(w, id)
 			}
 			Node::Marker(m) => {
-				self.information[&id].write(w, m)?;
+				self.information[&id].write(w, id, m)?;
 
 				self.graph.add_links_incoming(w, id)
 			}

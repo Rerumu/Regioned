@@ -4,6 +4,8 @@ use std::{
 	num::NonZeroUsize,
 };
 
+use crate::data_flow::node::NodeId;
+
 #[derive(Clone, Copy)]
 pub enum Face {
 	Incoming,
@@ -68,11 +70,11 @@ impl Information {
 		self.outgoing = self.outgoing.max(value + 1);
 	}
 
-	pub fn write<T>(&self, w: &mut dyn Write, label: T) -> IResult<()>
+	pub fn write<T>(&self, w: &mut dyn Write, id: NodeId, label: T) -> IResult<()>
 	where
 		T: Display,
 	{
-		write!(w, "[label = \"{{")?;
+		write!(w, "{id} [label = \"{{")?;
 
 		if let Some(ports) = Ports::new(Face::Incoming, self.incoming) {
 			write!(w, "{ports} | ")?;
