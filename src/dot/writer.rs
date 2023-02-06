@@ -1,5 +1,5 @@
 use std::{
-	collections::HashMap,
+	collections::{HashMap, HashSet},
 	io::{Result, Write},
 };
 
@@ -65,6 +65,7 @@ impl<S> GraphExt<S> for Graph<S> {
 
 pub struct Writer<'a, S> {
 	info_map: HashMap<NodeId, Info>,
+	visited: HashSet<NodeId>,
 	graph: &'a Graph<S>,
 }
 
@@ -72,9 +73,11 @@ impl<'a, S> Writer<'a, S> {
 	/// Creates a new [`Writer`].
 	#[must_use]
 	pub fn new(graph: &'a Graph<S>) -> Self {
-		let info_map = HashMap::new();
-
-		Self { info_map, graph }
+		Self {
+			info_map: HashMap::new(),
+			visited: HashSet::new(),
+			graph,
+		}
 	}
 
 	fn initialize_info(&mut self) {
@@ -156,7 +159,7 @@ where
 	}
 
 	fn add_node(&mut self, w: &mut dyn Write, id: NodeId) -> Result<()> {
-		if self.info_map.get_mut(&id).map(Info::try_visit).unwrap() {
+		if !self.visited.insert(id) {
 			return Ok(());
 		}
 
@@ -207,6 +210,8 @@ where
 		writeln!(w, "style = filled;")?;
 
 		self.initialize_info();
+		self.visited.clear();
+
 		self.add_reachable(w, roots)?;
 		self.add_not_unreachable(w)?;
 

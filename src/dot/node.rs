@@ -35,7 +35,6 @@ impl Display for Ports {
 pub struct Info {
 	incoming: usize,
 	outgoing: usize,
-	visited: bool,
 }
 
 impl Info {
@@ -45,10 +44,6 @@ impl Info {
 
 	pub fn set_outgoing(&mut self, value: usize) {
 		self.outgoing = self.outgoing.max(value + 1);
-	}
-
-	pub fn try_visit(&mut self) -> bool {
-		std::mem::replace(&mut self.visited, true)
 	}
 
 	pub fn write<T>(&self, w: &mut dyn Write, label: T) -> IResult<()>
