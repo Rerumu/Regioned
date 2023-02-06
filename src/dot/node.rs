@@ -32,12 +32,12 @@ impl Display for Ports {
 }
 
 #[derive(Default)]
-pub struct Info {
+pub struct Information {
 	incoming: usize,
 	outgoing: usize,
 }
 
-impl Info {
+impl Information {
 	pub fn set_incoming(&mut self, value: usize) {
 		self.incoming = self.incoming.max(value + 1);
 	}

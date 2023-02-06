@@ -10,7 +10,7 @@ use crate::data_flow::{
 };
 
 use super::{
-	node::Info,
+	node::Information,
 	region::{Labeled, Named},
 	tooltip::{Ref, Tooltip},
 };
@@ -64,7 +64,7 @@ impl<S> GraphExt<S> for Graph<S> {
 }
 
 pub struct Writer<'a, S> {
-	info_map: HashMap<NodeId, Info>,
+	information: HashMap<NodeId, Information>,
 	visited: HashSet<NodeId>,
 	graph: &'a Graph<S>,
 }
@@ -74,26 +74,26 @@ impl<'a, S> Writer<'a, S> {
 	#[must_use]
 	pub fn new(graph: &'a Graph<S>) -> Self {
 		Self {
-			info_map: HashMap::new(),
+			information: HashMap::new(),
 			visited: HashSet::new(),
 			graph,
 		}
 	}
 
 	fn initialize_info(&mut self) {
-		self.info_map.clear();
+		self.information.clear();
 
 		for (id, list) in &self.graph.predecessors {
 			let face = self.graph.get_face_incoming(id);
 			let last = list.len();
 
-			self.info_map.entry(face).or_default().set_incoming(last);
+			self.information.entry(face).or_default().set_incoming(last);
 
 			for link in list {
 				let face = self.graph.get_face_outgoing(link.node());
 				let last = link.port().into();
 
-				self.info_map.entry(face).or_default().set_outgoing(last);
+				self.information.entry(face).or_default().set_outgoing(last);
 			}
 		}
 	}
@@ -101,7 +101,7 @@ impl<'a, S> Writer<'a, S> {
 	fn add_bad_node(&self, w: &mut dyn Write, id: NodeId) -> Result<()> {
 		write!(w, "{id} ")?;
 
-		self.info_map[&id].write(w, "BAD NODE")
+		self.information[&id].write(w, "BAD NODE")
 	}
 }
 
@@ -119,7 +119,7 @@ where
 
 	fn add_gamma(&mut self, w: &mut dyn Write, regions: &[Region], id: NodeId) -> Result<()> {
 		Named::Gamma.write(w, id, |w| {
-			self.info_map[&id].write(w, "Selector")?;
+			self.information[&id].write(w, "Selector")?;
 
 			regions.iter().enumerate().try_for_each(|(i, v)| {
 				Labeled::new(Named::Then, i).write(w, v.start(), |w| {
@@ -169,12 +169,12 @@ where
 
 		match *node {
 			Node::Simple(ref s) => {
-				self.info_map[&id].write(w, Ref(s))?;
+				self.information[&id].write(w, Ref(s))?;
 
 				self.graph.add_links_incoming(w, id)
 			}
 			Node::Marker(m) => {
-				self.info_map[&id].write(w, m)?;
+				self.information[&id].write(w, m)?;
 
 				self.graph.add_links_incoming(w, id)
 			}
