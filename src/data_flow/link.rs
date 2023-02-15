@@ -73,3 +73,9 @@ impl Link {
 		self.port.iter().map(move |p| Link::new(self.node, p))
 	}
 }
+
+impl From<NodeId> for Link {
+	fn from(node: NodeId) -> Self {
+		Self::new(node, Port::default())
+	}
+}
