@@ -91,6 +91,10 @@ impl<'a, S> Writer<'a, S> {
 		self.information.clear();
 
 		for (id, list) in &self.graph.predecessors {
+			if !self.graph.nodes.contains_key(id) {
+				continue;
+			}
+
 			let face = self.graph.get_face_incoming(id);
 			let last = list.len();
 
