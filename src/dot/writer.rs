@@ -101,6 +101,10 @@ impl<'a, S> Writer<'a, S> {
 			self.information.entry(face).or_default().set_incoming(last);
 
 			for link in list {
+				if !self.graph.nodes.contains_key(link.node()) {
+					continue;
+				}
+
 				let face = self.graph.get_face_outgoing(link.node());
 				let last = usize::from(link.port()) + 1;
 
