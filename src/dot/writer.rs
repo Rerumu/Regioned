@@ -51,9 +51,11 @@ trait GraphExt<S> {
 
 impl<S> GraphExt<S> for Graph<S> {
 	fn get_face_region(&self, id: NodeId) -> Option<Region> {
-		self.nodes[id].as_compound().and_then(|v| match v {
-			Compound::Gamma => None,
-			_ => self.regions.get(id).and_then(|v| v.first()).copied(),
+		self.nodes.get(id).and_then(|n| {
+			n.as_compound().and_then(|v| match v {
+				Compound::Gamma => None,
+				_ => self.regions.get(id).and_then(|v| v.first()).copied(),
+			})
 		})
 	}
 
@@ -91,20 +93,12 @@ impl<'a, S> Writer<'a, S> {
 		self.information.clear();
 
 		for (id, list) in &self.graph.predecessors {
-			if !self.graph.nodes.contains_key(id) {
-				continue;
-			}
-
 			let face = self.graph.get_face_incoming(id);
 			let last = list.len();
 
 			self.information.entry(face).or_default().set_incoming(last);
 
 			for link in list {
-				if !self.graph.nodes.contains_key(link.node()) {
-					continue;
-				}
-
 				let face = self.graph.get_face_outgoing(link.node());
 				let last = usize::from(link.port()) + 1;
 
