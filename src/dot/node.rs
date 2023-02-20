@@ -1,7 +1,6 @@
 use std::{
 	fmt::{Display, Formatter, Result as FResult},
 	io::{Result as IResult, Write},
-	num::NonZeroUsize,
 };
 
 use crate::data_flow::node::NodeId;
@@ -30,12 +29,12 @@ impl Face {
 
 struct Ports {
 	face: Face,
-	len: NonZeroUsize,
+	len: usize,
 }
 
 impl Ports {
 	fn new(face: Face, len: usize) -> Option<Self> {
-		NonZeroUsize::new(len).map(|len| Self { face, len })
+		(len > 1).then_some(Self { face, len })
 	}
 }
 
@@ -43,7 +42,7 @@ impl Display for Ports {
 	fn fmt(&self, f: &mut Formatter<'_>) -> FResult {
 		write!(f, "{{")?;
 
-		for i in 0..self.len.get() {
+		for i in 0..self.len {
 			if i != 0 {
 				write!(f, "| ")?;
 			}
