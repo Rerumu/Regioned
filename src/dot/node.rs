@@ -44,7 +44,7 @@ impl Display for Ports {
 
 		for i in 0..self.len {
 			if i != 0 {
-				write!(f, "| ")?;
+				write!(f, "|")?;
 			}
 
 			write!(f, "<{}{i}>{i}", self.face.name())?;
