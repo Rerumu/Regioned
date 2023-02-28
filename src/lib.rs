@@ -1,5 +1,5 @@
 pub mod data_flow;
-pub mod transform;
+pub mod pass;
 
 #[cfg(feature = "dot")]
 pub mod dot;
