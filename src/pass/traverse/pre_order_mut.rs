@@ -67,12 +67,4 @@ impl PreOrderMut {
 			}
 		}
 	}
-
-	/// Walks the graph, starting at the leaves and ending at the roots.
-	pub fn run<S, I>(&mut self, graph: &mut Graph<S>, roots: I)
-	where
-		I: IntoIterator<Item = NodeId>,
-	{
-		self.run_with(graph, roots, |_, _| {});
-	}
 }
