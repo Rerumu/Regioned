@@ -1,10 +1,10 @@
 use crate::data_flow::{graph::Graph, node::NodeId};
 
-use super::walker::Walker;
+use super::traverse::post_order::PostOrder;
 
 #[derive(Default)]
 pub struct MarkAndSweep {
-	walker: Walker,
+	post_order: PostOrder,
 }
 
 impl MarkAndSweep {
@@ -15,7 +15,7 @@ impl MarkAndSweep {
 	}
 
 	fn sweep<S>(&self, graph: &mut Graph<S>) {
-		let seen = self.walker.seen();
+		let seen = self.post_order.seen();
 
 		graph.nodes.retain(|id, _| seen.contains(&id));
 	}
@@ -25,7 +25,7 @@ impl MarkAndSweep {
 	where
 		I: IntoIterator<Item = NodeId>,
 	{
-		self.walker.run(graph, roots);
+		self.post_order.run(graph, roots);
 		self.sweep(graph);
 	}
 }

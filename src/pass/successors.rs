@@ -4,13 +4,13 @@ use tinyvec::TinyVec;
 
 use crate::data_flow::{graph::Graph, node::NodeId};
 
-use super::walker::Walker;
+use super::traverse::post_order::PostOrder;
 
 pub type SuccessorList = TinyVec<[NodeId; 2]>;
 
 #[derive(Default)]
 pub struct Successors {
-	walker: Walker,
+	post_order: PostOrder,
 	cache: HashMap<NodeId, SuccessorList>,
 }
 
@@ -32,7 +32,7 @@ impl Successors {
 	where
 		I: IntoIterator<Item = NodeId>,
 	{
-		self.walker.run_with(graph, roots, |id| {
+		self.post_order.run_with(graph, roots, |id| {
 			for v in &graph.predecessors[id] {
 				let successors = self.cache.entry(v.node()).or_default();
 

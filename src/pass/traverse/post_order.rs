@@ -3,13 +3,13 @@ use std::collections::HashSet;
 use crate::data_flow::{graph::Graph, node::NodeId};
 
 #[derive(Default)]
-pub struct Walker {
+pub struct PostOrder {
 	seen: HashSet<NodeId>,
 	queue: Vec<NodeId>,
 }
 
-impl Walker {
-	/// Creates a new, reusable [`Walker`] instance.
+impl PostOrder {
+	/// Creates a new, reusable [`PostOrder`] instance.
 	#[must_use]
 	pub fn new() -> Self {
 		Self::default()
@@ -42,7 +42,7 @@ impl Walker {
 		&self.seen
 	}
 
-	/// Walks the graph, starting at the roots.
+	/// Walks the graph, starting at the roots and ending at the leaves.
 	/// The `operation` is called on each node.
 	pub fn run_with<S, I, O>(&mut self, graph: &Graph<S>, roots: I, mut operation: O)
 	where
@@ -60,7 +60,7 @@ impl Walker {
 		}
 	}
 
-	/// Walks the graph, starting at the roots.
+	/// Walks the graph, starting at the roots and ending at the leaves.
 	pub fn run<S, I>(&mut self, graph: &Graph<S>, roots: I)
 	where
 		I: IntoIterator<Item = NodeId>,
