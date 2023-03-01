@@ -2,6 +2,8 @@ use std::collections::HashSet;
 
 use crate::data_flow::{graph::Graph, node::NodeId};
 
+/// A post-order traversal of the graph.
+/// It visits every reachable node, starting at the roots and ending at the leaves.
 #[derive(Default)]
 pub struct PostOrder {
 	seen: HashSet<NodeId>,
@@ -42,8 +44,7 @@ impl PostOrder {
 		&self.seen
 	}
 
-	/// Walks the graph, starting at the roots and ending at the leaves.
-	/// The `operation` is called on each node.
+	/// Traverses the graph, applying the `operation` on every node.
 	pub fn run_with<S, I, O>(&mut self, graph: &Graph<S>, roots: I, mut operation: O)
 	where
 		I: IntoIterator<Item = NodeId>,
@@ -60,7 +61,7 @@ impl PostOrder {
 		}
 	}
 
-	/// Walks the graph, starting at the roots and ending at the leaves.
+	/// Traverses the graph. Performs no operation on the nodes.
 	pub fn run<S, I>(&mut self, graph: &Graph<S>, roots: I)
 	where
 		I: IntoIterator<Item = NodeId>,

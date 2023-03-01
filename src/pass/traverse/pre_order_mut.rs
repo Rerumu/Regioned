@@ -2,6 +2,8 @@ use std::collections::HashSet;
 
 use crate::data_flow::{graph::Graph, node::NodeId};
 
+/// A pre-order traversal of the graph.
+/// It visits every reachable node, starting at the roots and ending at the leaves.
 #[derive(Default)]
 pub struct PreOrderMut {
 	seen: HashSet<NodeId>,
@@ -42,8 +44,8 @@ impl PreOrderMut {
 		&self.seen
 	}
 
-	/// Walks the graph, starting at the leaves and ending at the roots.
-	/// The `operation` is called on each node.
+	/// Traverses the graph, applying the `operation` on every node.
+	/// The `operation` is allowed to modify the graph.
 	pub fn run_with<S, I, O>(&mut self, graph: &mut Graph<S>, roots: I, mut operation: O)
 	where
 		I: IntoIterator<Item = NodeId>,

@@ -2,6 +2,8 @@ use crate::data_flow::{graph::Graph, node::NodeId};
 
 use super::traverse::post_order::PostOrder;
 
+/// A mark-and-sweep algorithm for removing unreachable nodes from the graph.
+/// It uses a shallow traversal which may result in logically unreachable nodes being retained.
 #[derive(Default)]
 pub struct MarkAndSweep {
 	post_order: PostOrder,
@@ -20,7 +22,7 @@ impl MarkAndSweep {
 		graph.nodes.retain(|id, _| seen.contains(&id));
 	}
 
-	/// Runs the mark-and-sweep algorithm on the given [`Graph`].
+	/// Removes unreachable nodes from the graph.
 	pub fn run<S, I>(&mut self, graph: &mut Graph<S>, roots: I)
 	where
 		I: IntoIterator<Item = NodeId>,

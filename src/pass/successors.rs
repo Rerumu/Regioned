@@ -8,6 +8,8 @@ use super::traverse::post_order::PostOrder;
 
 pub type SuccessorList = TinyVec<[NodeId; 2]>;
 
+/// A node successor finder.
+/// It caches the successors for each node after a traversal.
 #[derive(Default)]
 pub struct Successors {
 	post_order: PostOrder,
