@@ -3,9 +3,9 @@ name = "regioned"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+dot = []
+
 [dependencies]
 slotmap = "=1.0.6"
 tinyvec = { version = "=1.6.0", features = ["alloc"] }
-
-[features]
-dot = []
