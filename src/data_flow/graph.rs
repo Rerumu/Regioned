@@ -41,11 +41,11 @@ impl<S> Graph<S> {
 		let id = self.nodes.insert(node);
 		let index = id.index();
 
-		if self.predecessors.len() <= index {
+		if let Some(last) = self.predecessors.get_mut(index) {
+			*last = TinyVec::new();
+		} else {
 			self.predecessors.resize_with(index + 1, TinyVec::new);
 		}
-
-		self.predecessors[index] = TinyVec::new();
 
 		id
 	}
