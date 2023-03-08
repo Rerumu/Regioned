@@ -94,20 +94,6 @@ impl<S> Graph<S> {
 
 		self.nodes.remove(id).as_ref().and_then(Node::as_compound)
 	}
-
-	/// Sets the number of predecessors for a node.
-	///
-	/// If it needs to be longer, it's filled with dead links. If it needs to be shorter, it's truncated.
-	pub fn set_predecessor_count(&mut self, id: NodeId, count: usize) {
-		self.predecessors[id].resize_with(count, Default::default);
-	}
-
-	/// Sets a connection between two nodes and ports.
-	pub fn set_connection(&mut self, from: Link, to: Link) {
-		let port = usize::from(to.port());
-
-		self.predecessors[to.node()][port] = from;
-	}
 }
 
 impl<S> Default for Graph<S> {
