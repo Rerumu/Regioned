@@ -21,12 +21,14 @@ impl Region {
 	}
 
 	/// Returns the start marker [`Id`] of the region.
+	#[inline]
 	#[must_use]
 	pub const fn start(self) -> Id {
 		self.start
 	}
 
 	/// Returns the end marker [`Id`] of the region.
+	#[inline]
 	#[must_use]
 	pub const fn end(self) -> Id {
 		self.end
@@ -123,6 +125,7 @@ impl<S> From<Compound> for Node<S> {
 
 impl<S> Node<S> {
 	/// Returns a reference to the [`Node::Simple`] node if it is one.
+	#[inline]
 	#[must_use]
 	pub const fn as_simple(&self) -> Option<&S> {
 		if let Self::Simple(simple) = self {
@@ -133,6 +136,7 @@ impl<S> Node<S> {
 	}
 
 	/// Returns a reference to the [`Node::Marker`] node if it is one.
+	#[inline]
 	#[must_use]
 	pub const fn as_marker(&self) -> Option<Marker> {
 		if let Self::Marker(marker) = *self {
@@ -143,6 +147,7 @@ impl<S> Node<S> {
 	}
 
 	/// Returns a reference to the [`Node::Compound`] node if it is one.
+	#[inline]
 	#[must_use]
 	pub const fn as_compound(&self) -> Option<Compound> {
 		if let Self::Compound(compound) = *self {

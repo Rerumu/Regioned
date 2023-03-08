@@ -10,12 +10,14 @@ pub struct Port {
 
 impl Port {
 	/// Creates a new [`Port`] from an index.
+	#[inline]
 	#[must_use]
 	pub const fn new(index: u16) -> Self {
 		Self { index }
 	}
 
 	/// Returns the index of the [`Port`].
+	#[inline]
 	#[must_use]
 	pub const fn index(self) -> u16 {
 		self.index
@@ -28,6 +30,7 @@ impl Port {
 }
 
 impl From<Port> for usize {
+	#[inline]
 	fn from(port: Port) -> Self {
 		port.index.into()
 	}
@@ -36,6 +39,7 @@ impl From<Port> for usize {
 impl TryFrom<usize> for Port {
 	type Error = TryFromIntError;
 
+	#[inline]
 	fn try_from(value: usize) -> Result<Self, Self::Error> {
 		u16::try_from(value).map(|index| Self { index })
 	}
@@ -51,18 +55,21 @@ pub struct Link {
 
 impl Link {
 	/// Creates a new [`Link`] from an [`Id`] and a [`Port`].
+	#[inline]
 	#[must_use]
 	pub const fn new(node: Id, port: Port) -> Self {
 		Self { node, port }
 	}
 
 	/// Returns the [`Id`] of the [`Link`].
+	#[inline]
 	#[must_use]
 	pub const fn node(self) -> Id {
 		self.node
 	}
 
 	/// Returns the [`Port`] of the [`Link`].
+	#[inline]
 	#[must_use]
 	pub const fn port(self) -> Port {
 		self.port
@@ -75,6 +82,7 @@ impl Link {
 }
 
 impl From<Id> for Link {
+	#[inline]
 	fn from(node: Id) -> Self {
 		Self::new(node, Port::default())
 	}

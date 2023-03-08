@@ -24,6 +24,7 @@ pub struct Graph<S> {
 
 impl<S> Graph<S> {
 	/// Creates a new, empty [`Graph`].
+	#[inline]
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
@@ -34,6 +35,7 @@ impl<S> Graph<S> {
 	}
 
 	/// Creates a new, empty [`Graph`] with the specified capacity.
+	#[inline]
 	#[must_use]
 	pub fn with_capacity(capacity: usize) -> Self {
 		Self {
@@ -44,12 +46,14 @@ impl<S> Graph<S> {
 	}
 
 	/// Clears the graph. Keeps the allocated memory for reuse.
+	#[inline]
 	pub fn clear(&mut self) {
 		self.nodes.clear();
 		self.regions.clear();
 	}
 
 	/// Adds a [`Node`] to the graph and returns its [`Id`].
+	#[inline]
 	#[must_use]
 	pub fn add_node(&mut self, node: Node<S>) -> Id {
 		let id = self.nodes.insert(node);
@@ -65,11 +69,13 @@ impl<S> Graph<S> {
 	}
 
 	/// Removes a [`Node`] from the graph and returns it.
+	#[inline]
 	pub fn remove_node(&mut self, id: Id) -> Option<Node<S>> {
 		self.nodes.try_remove(id)
 	}
 
 	/// Adds a [`Region`] to the graph and returns it.
+	#[inline]
 	#[must_use]
 	pub fn add_region(&mut self) -> Region {
 		let start = self.add_node(Marker::Start.into());
@@ -79,12 +85,14 @@ impl<S> Graph<S> {
 	}
 
 	/// Removes a [`Region`] from the graph.
+	#[inline]
 	pub fn remove_region(&mut self, region: Region) {
 		self.nodes.remove(region.start());
 		self.nodes.remove(region.end());
 	}
 
 	/// Adds a [`Node::Compound`] to the graph and returns its [`Id`] and [`Region`].
+	#[inline]
 	#[must_use]
 	pub fn add_compound(&mut self, compound: Compound) -> (Id, Region) {
 		let id = self.add_node(compound.into());
@@ -96,6 +104,7 @@ impl<S> Graph<S> {
 	}
 
 	/// Adds a [`Compound::Gamma`] node with [`Region`]s to the graph and returns its [`Id`].
+	#[inline]
 	#[must_use]
 	pub fn add_gamma<I>(&mut self, regions: I) -> Id
 	where
@@ -110,6 +119,7 @@ impl<S> Graph<S> {
 	}
 
 	/// Removes a [`Node::Compound`] with regions from the graph and returns it.
+	#[inline]
 	pub fn remove_compound(&mut self, id: Id) -> Option<Compound> {
 		for region in self.regions.remove(&id)? {
 			self.remove_region(region);
@@ -123,6 +133,7 @@ impl<S> Graph<S> {
 }
 
 impl<S> Default for Graph<S> {
+	#[inline]
 	fn default() -> Self {
 		Self::new()
 	}
