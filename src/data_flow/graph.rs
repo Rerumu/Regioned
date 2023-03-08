@@ -23,10 +23,24 @@ pub struct Graph<S> {
 }
 
 impl<S> Graph<S> {
-	/// Creates a new [`Graph`].
+	/// Creates a new, empty [`Graph`].
 	#[must_use]
 	pub fn new() -> Self {
-		Self::default()
+		Self {
+			nodes: Arena::new(),
+			regions: HashMap::new(),
+			predecessors: Vec::new(),
+		}
+	}
+
+	/// Creates a new, empty [`Graph`] with the specified capacity.
+	#[must_use]
+	pub fn with_capacity(capacity: usize) -> Self {
+		Self {
+			nodes: Arena::with_capacity(capacity),
+			regions: HashMap::new(),
+			predecessors: Vec::with_capacity(capacity),
+		}
 	}
 
 	/// Clears the graph. Keeps the allocated memory for reuse.
@@ -110,10 +124,6 @@ impl<S> Graph<S> {
 
 impl<S> Default for Graph<S> {
 	fn default() -> Self {
-		Self {
-			nodes: Arena::new(),
-			regions: HashMap::new(),
-			predecessors: Vec::new(),
-		}
+		Self::new()
 	}
 }
