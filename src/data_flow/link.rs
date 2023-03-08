@@ -1,6 +1,6 @@
 use std::num::TryFromIntError;
 
-use super::node::NodeId;
+use super::node::Id;
 
 /// An index of a port to either an input or output.
 #[derive(Default, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
@@ -41,24 +41,24 @@ impl TryFrom<usize> for Port {
 	}
 }
 
-/// A relationship between a [`NodeId`] and a [`Port`]. Two of these together
+/// A relationship between an [`Id`] and a [`Port`]. Two of these together
 /// represent a connection between two nodes.
 #[derive(Default, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Link {
-	node: NodeId,
+	node: Id,
 	port: Port,
 }
 
 impl Link {
-	/// Creates a new [`Link`] from a [`NodeId`] and a [`Port`].
+	/// Creates a new [`Link`] from an [`Id`] and a [`Port`].
 	#[must_use]
-	pub const fn new(node: NodeId, port: Port) -> Self {
+	pub const fn new(node: Id, port: Port) -> Self {
 		Self { node, port }
 	}
 
-	/// Returns the [`NodeId`] of the [`Link`].
+	/// Returns the [`Id`] of the [`Link`].
 	#[must_use]
-	pub const fn node(self) -> NodeId {
+	pub const fn node(self) -> Id {
 		self.node
 	}
 
@@ -74,8 +74,8 @@ impl Link {
 	}
 }
 
-impl From<NodeId> for Link {
-	fn from(node: NodeId) -> Self {
+impl From<Id> for Link {
+	fn from(node: Id) -> Self {
 		Self::new(node, Port::default())
 	}
 }

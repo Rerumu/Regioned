@@ -1,4 +1,4 @@
-use crate::data_flow::{graph::Graph, node::NodeId};
+use crate::data_flow::{graph::Graph, node::Id};
 
 use super::traverse::post_order::PostOrder;
 
@@ -25,7 +25,7 @@ impl MarkAndSweep {
 	/// Removes unreachable nodes from the graph.
 	pub fn run<S, I>(&mut self, graph: &mut Graph<S>, roots: I)
 	where
-		I: IntoIterator<Item = NodeId>,
+		I: IntoIterator<Item = Id>,
 	{
 		self.post_order.run(graph, roots);
 		self.sweep(graph);

@@ -7,7 +7,7 @@ edition = "2021"
 dot = []
 
 [dependencies]
-slotmap = "=1.0.6"
+arena = { git = "https://github.com/Rerumu/Arena" }
 tinyvec = { version = "=1.6.0", features = ["alloc"] }
 
 [dev-dependencies]

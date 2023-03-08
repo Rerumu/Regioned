@@ -1,13 +1,15 @@
 use std::collections::HashSet;
 
-use crate::data_flow::{graph::Graph, node::NodeId};
+use arena::key::Key;
+
+use crate::data_flow::{graph::Graph, node::Id};
 
 /// A post-order traversal of the graph.
 /// It visits every reachable node, starting at the roots and ending at the leaves.
 #[derive(Default)]
 pub struct PostOrder {
-	seen: HashSet<NodeId>,
-	queue: Vec<NodeId>,
+	seen: HashSet<Id>,
+	queue: Vec<Id>,
 }
 
 impl PostOrder {
@@ -17,7 +19,7 @@ impl PostOrder {
 		Self::default()
 	}
 
-	fn add_guarded(&mut self, id: NodeId) {
+	fn add_guarded(&mut self, id: Id) {
 		if !self.seen.insert(id) {
 			return;
 		}
@@ -25,30 +27,30 @@ impl PostOrder {
 		self.queue.push(id);
 	}
 
-	fn add_neighbors<S>(&mut self, graph: &Graph<S>, id: NodeId) {
+	fn add_neighbors<S>(&mut self, graph: &Graph<S>, id: Id) {
 		if graph.nodes[id].as_compound().is_some() {
-			for region in &graph.regions[id] {
+			for region in &graph.regions[&id] {
 				self.add_guarded(region.start());
 				self.add_guarded(region.end());
 			}
 		}
 
-		for link in &graph.predecessors[id] {
+		for link in &graph.predecessors[id.index()] {
 			self.add_guarded(link.node());
 		}
 	}
 
 	/// Returns the nodes that have been seen.
 	#[must_use]
-	pub fn seen(&self) -> &HashSet<NodeId> {
+	pub fn seen(&self) -> &HashSet<Id> {
 		&self.seen
 	}
 
 	/// Traverses the graph, applying the `operation` on every node.
 	pub fn run_with<S, I, O>(&mut self, graph: &Graph<S>, roots: I, mut operation: O)
 	where
-		I: IntoIterator<Item = NodeId>,
-		O: FnMut(NodeId),
+		I: IntoIterator<Item = Id>,
+		O: FnMut(Id),
 	{
 		self.seen.clear();
 
@@ -64,7 +66,7 @@ impl PostOrder {
 	/// Traverses the graph. Performs no operation on the nodes.
 	pub fn run<S, I>(&mut self, graph: &Graph<S>, roots: I)
 	where
-		I: IntoIterator<Item = NodeId>,
+		I: IntoIterator<Item = Id>,
 	{
 		self.run_with(graph, roots, |_| {});
 	}

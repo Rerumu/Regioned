@@ -1,45 +1,34 @@
 use std::fmt::{Display, Formatter, Result};
 
-use slotmap::{new_key_type, Key};
+#[cfg(debug_assertions)]
+pub type Id = arena::key::Id<std::num::NonZeroU32>;
 
-new_key_type! {
-	/// A node identifier.
-	///
-	/// It refers to a [`Node`] in the data flow graph.
-	pub struct NodeId;
-}
-
-impl Display for NodeId {
-	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-		let data = self.data();
-
-		write!(f, "N{data:?}")
-	}
-}
+#[cfg(not(debug_assertions))]
+pub type Id = arena::key::Id<arena::version::Nil>;
 
 /// A region.
 ///
 /// It has a start and an end marker that delimit it.
 #[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Region {
-	start: NodeId,
-	end: NodeId,
+	start: Id,
+	end: Id,
 }
 
 impl Region {
-	pub(crate) const fn new(start: NodeId, end: NodeId) -> Self {
+	pub(crate) const fn new(start: Id, end: Id) -> Self {
 		Self { start, end }
 	}
 
-	/// Returns the start marker [`NodeId`] of the region.
+	/// Returns the start marker [`Id`] of the region.
 	#[must_use]
-	pub const fn start(self) -> NodeId {
+	pub const fn start(self) -> Id {
 		self.start
 	}
 
-	/// Returns the end marker [`NodeId`] of the region.
+	/// Returns the end marker [`Id`] of the region.
 	#[must_use]
-	pub const fn end(self) -> NodeId {
+	pub const fn end(self) -> Id {
 		self.end
 	}
 }

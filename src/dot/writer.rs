@@ -3,10 +3,12 @@ use std::{
 	io::{Result, Write},
 };
 
+use arena::key::Key;
+
 use crate::data_flow::{
 	graph::Graph,
 	link::Link,
-	node::{Compound, Node, NodeId, Region},
+	node::{Compound, Id, Node, Region},
 };
 
 use super::{
@@ -16,13 +18,13 @@ use super::{
 };
 
 trait GraphExt<S> {
-	fn get_face_region(&self, id: NodeId) -> Option<Region>;
+	fn get_face_region(&self, id: Id) -> Option<Region>;
 
-	fn get_face_incoming(&self, id: NodeId) -> NodeId {
+	fn get_face_incoming(&self, id: Id) -> Id {
 		self.get_face_region(id).map_or(id, Region::start)
 	}
 
-	fn get_face_outgoing(&self, id: NodeId) -> NodeId {
+	fn get_face_outgoing(&self, id: Id) -> Id {
 		self.get_face_region(id).map_or(id, Region::end)
 	}
 
@@ -42,25 +44,25 @@ trait GraphExt<S> {
 		writeln!(w, ";")
 	}
 
-	fn add_links_redirected(&self, w: &mut dyn Write, to: NodeId, from: NodeId) -> Result<()>;
+	fn add_links_redirected(&self, w: &mut dyn Write, to: Id, from: Id) -> Result<()>;
 
-	fn add_links_incoming(&self, w: &mut dyn Write, to: NodeId) -> Result<()> {
+	fn add_links_incoming(&self, w: &mut dyn Write, to: Id) -> Result<()> {
 		self.add_links_redirected(w, to, to)
 	}
 }
 
 impl<S> GraphExt<S> for Graph<S> {
-	fn get_face_region(&self, id: NodeId) -> Option<Region> {
+	fn get_face_region(&self, id: Id) -> Option<Region> {
 		self.nodes.get(id).and_then(|n| {
 			n.as_compound().and_then(|v| match v {
 				Compound::Gamma => None,
-				_ => self.regions.get(id).and_then(|v| v.first()).copied(),
+				_ => self.regions.get(&id).and_then(|v| v.first()).copied(),
 			})
 		})
 	}
 
-	fn add_links_redirected(&self, w: &mut dyn Write, to: NodeId, from: NodeId) -> Result<()> {
-		self.predecessors[from]
+	fn add_links_redirected(&self, w: &mut dyn Write, to: Id, from: Id) -> Result<()> {
+		self.predecessors[from.index()]
 			.iter()
 			.copied()
 			.enumerate()
@@ -73,8 +75,8 @@ impl<S> GraphExt<S> for Graph<S> {
 }
 
 pub struct Writer<'a, S> {
-	information: HashMap<NodeId, Information>,
-	visited: HashSet<NodeId>,
+	information: HashMap<Id, Information>,
+	visited: HashSet<Id>,
 	graph: &'a Graph<S>,
 }
 
@@ -92,22 +94,28 @@ impl<'a, S> Writer<'a, S> {
 	fn initialize_info(&mut self) {
 		self.information.clear();
 
-		for (id, list) in &self.graph.predecessors {
+		for id in self.graph.nodes.keys() {
+			let list = &self.graph.predecessors[id.index()];
 			let face = self.graph.get_face_incoming(id);
-			let last = list.len();
 
-			self.information.entry(face).or_default().set_incoming(last);
+			self.information
+				.entry(face)
+				.or_default()
+				.set_incoming(list.len());
 
 			for link in list {
 				let face = self.graph.get_face_outgoing(link.node());
-				let last = usize::from(link.port()) + 1;
+				let value = usize::from(link.port()) + 1;
 
-				self.information.entry(face).or_default().set_outgoing(last);
+				self.information
+					.entry(face)
+					.or_default()
+					.set_outgoing(value);
 			}
 		}
 	}
 
-	fn add_bad_node(&self, w: &mut dyn Write, id: NodeId) -> Result<()> {
+	fn add_bad_node(&self, w: &mut dyn Write, id: Id) -> Result<()> {
 		write!(w, "{id} ")?;
 
 		self.information[&id].write(w, id, "BAD NODE")
@@ -118,15 +126,15 @@ impl<'a, S> Writer<'a, S>
 where
 	S: Tooltip,
 {
-	fn add_nodes_incoming(&mut self, w: &mut dyn Write, id: NodeId) -> Result<()> {
-		self.graph.predecessors[id]
+	fn add_nodes_incoming(&mut self, w: &mut dyn Write, id: Id) -> Result<()> {
+		self.graph.predecessors[id.index()]
 			.iter()
 			.copied()
 			.map(Link::node)
 			.try_for_each(|n| self.add_node(w, n))
 	}
 
-	fn add_gamma(&mut self, w: &mut dyn Write, regions: &[Region], id: NodeId) -> Result<()> {
+	fn add_gamma(&mut self, w: &mut dyn Write, regions: &[Region], id: Id) -> Result<()> {
 		Named::Gamma.write(w, id, |w| {
 			self.information[&id].write(w, id, "Selector")?;
 
@@ -141,13 +149,7 @@ where
 		self.graph.add_links_incoming(w, id)
 	}
 
-	fn add_region(
-		&mut self,
-		w: &mut dyn Write,
-		region: Region,
-		typ: Named,
-		id: NodeId,
-	) -> Result<()> {
+	fn add_region(&mut self, w: &mut dyn Write, region: Region, typ: Named, id: Id) -> Result<()> {
 		typ.write(w, id, |w| {
 			self.add_node(w, region.start())?;
 			self.add_node(w, region.end())
@@ -156,8 +158,8 @@ where
 		self.graph.add_links_redirected(w, region.start(), id)
 	}
 
-	fn add_compound(&mut self, w: &mut dyn Write, compound: Compound, id: NodeId) -> Result<()> {
-		let regions = &self.graph.regions[id];
+	fn add_compound(&mut self, w: &mut dyn Write, compound: Compound, id: Id) -> Result<()> {
+		let regions = &self.graph.regions[&id];
 
 		match compound {
 			Compound::Gamma => self.add_gamma(w, regions, id),
@@ -167,7 +169,7 @@ where
 		}
 	}
 
-	fn add_node(&mut self, w: &mut dyn Write, id: NodeId) -> Result<()> {
+	fn add_node(&mut self, w: &mut dyn Write, id: Id) -> Result<()> {
 		if !self.visited.insert(id) {
 			return Ok(());
 		}
@@ -191,7 +193,7 @@ where
 		}
 	}
 
-	fn add_reachable(&mut self, w: &mut dyn Write, roots: &[NodeId]) -> Result<()> {
+	fn add_reachable(&mut self, w: &mut dyn Write, roots: &[Id]) -> Result<()> {
 		Named::Reachable.write(w, "reachable", |w| {
 			roots.iter().copied().try_for_each(|v| self.add_node(w, v))
 		})
@@ -211,7 +213,7 @@ where
 	/// # Errors
 	///
 	/// If writing to the writer fails.
-	pub fn write(&mut self, w: &mut dyn Write, roots: &[NodeId]) -> Result<()> {
+	pub fn write(&mut self, w: &mut dyn Write, roots: &[Id]) -> Result<()> {
 		const NODE_ATTRIBUTES: &str = r##"shape = record, style = filled, fillcolor = "#DDDDFF", width = 0, height = 0, margin = "0.05,0.02""##;
 
 		writeln!(w, "digraph {{")?;

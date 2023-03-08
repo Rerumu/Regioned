@@ -1,10 +1,14 @@
-use slotmap::{HopSlotMap, SecondaryMap, SparseSecondaryMap};
+use std::collections::HashMap;
+
+use arena::collection::Arena;
 use tinyvec::TinyVec;
 
 use super::{
 	link::Link,
-	node::{Compound, Marker, Node, NodeId, Region},
+	node::{Compound, Id, Marker, Node, Region},
 };
+
+pub use arena::key::Key;
 
 pub type PredecessorList = TinyVec<[Link; 2]>;
 pub type RegionList = TinyVec<[Region; 1]>;
@@ -13,9 +17,9 @@ pub type RegionList = TinyVec<[Region; 1]>;
 ///
 /// It is an acyclic graph that represents the data flow of a program.
 pub struct Graph<S> {
-	pub nodes: HopSlotMap<NodeId, Node<S>>,
-	pub regions: SparseSecondaryMap<NodeId, RegionList>,
-	pub predecessors: SecondaryMap<NodeId, PredecessorList>,
+	pub nodes: Arena<Id, Node<S>>,
+	pub regions: HashMap<Id, RegionList>,
+	pub predecessors: Vec<PredecessorList>,
 }
 
 impl<S> Graph<S> {
@@ -30,19 +34,24 @@ impl<S> Graph<S> {
 		self.nodes.clear();
 	}
 
-	/// Adds a [`Node`] to the graph and returns its [`NodeId`].
+	/// Adds a [`Node`] to the graph and returns its [`Id`].
 	#[must_use]
-	pub fn add_node(&mut self, node: Node<S>) -> NodeId {
+	pub fn add_node(&mut self, node: Node<S>) -> Id {
 		let id = self.nodes.insert(node);
+		let index = id.index();
 
-		self.predecessors.insert(id, PredecessorList::default());
+		if self.predecessors.len() <= index {
+			self.predecessors.resize_with(index + 1, TinyVec::new);
+		}
+
+		self.predecessors[index] = TinyVec::new();
 
 		id
 	}
 
 	/// Removes a [`Node`] from the graph and returns it.
-	pub fn remove_node(&mut self, id: NodeId) -> Option<Node<S>> {
-		self.nodes.remove(id)
+	pub fn remove_node(&mut self, id: Id) -> Option<Node<S>> {
+		self.nodes.try_remove(id)
 	}
 
 	/// Adds a [`Region`] to the graph and returns it.
@@ -60,9 +69,9 @@ impl<S> Graph<S> {
 		self.nodes.remove(region.end());
 	}
 
-	/// Adds a [`Node::Compound`] to the graph and returns its [`NodeId`] and [`Region`].
+	/// Adds a [`Node::Compound`] to the graph and returns its [`Id`] and [`Region`].
 	#[must_use]
-	pub fn add_compound(&mut self, compound: Compound) -> (NodeId, Region) {
+	pub fn add_compound(&mut self, compound: Compound) -> (Id, Region) {
 		let id = self.add_node(compound.into());
 		let region = self.add_region();
 
@@ -71,9 +80,9 @@ impl<S> Graph<S> {
 		(id, region)
 	}
 
-	/// Adds a [`Compound::Gamma`] node with [`Region`]s to the graph and returns its [`NodeId`].
+	/// Adds a [`Compound::Gamma`] node with [`Region`]s to the graph and returns its [`Id`].
 	#[must_use]
-	pub fn add_gamma<I>(&mut self, regions: I) -> NodeId
+	pub fn add_gamma<I>(&mut self, regions: I) -> Id
 	where
 		I: IntoIterator<Item = Region>,
 	{
@@ -86,22 +95,25 @@ impl<S> Graph<S> {
 	}
 
 	/// Removes a [`Node::Compound`] with regions from the graph and returns it.
-	pub fn remove_compound(&mut self, id: NodeId) -> Option<Compound> {
-		for &region in self.regions.get(id)? {
+	pub fn remove_compound(&mut self, id: Id) -> Option<Compound> {
+		for &region in self.regions.get(&id)? {
 			self.nodes.remove(region.start());
 			self.nodes.remove(region.end());
 		}
 
-		self.nodes.remove(id).as_ref().and_then(Node::as_compound)
+		self.nodes
+			.try_remove(id)
+			.as_ref()
+			.and_then(Node::as_compound)
 	}
 }
 
 impl<S> Default for Graph<S> {
 	fn default() -> Self {
 		Self {
-			nodes: HopSlotMap::default(),
-			regions: SparseSecondaryMap::default(),
-			predecessors: SecondaryMap::default(),
+			nodes: Arena::new(),
+			regions: HashMap::new(),
+			predecessors: Vec::new(),
 		}
 	}
 }

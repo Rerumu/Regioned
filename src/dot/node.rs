@@ -3,7 +3,7 @@ use std::{
 	io::{Result as IResult, Write},
 };
 
-use crate::data_flow::node::NodeId;
+use crate::data_flow::node::Id;
 
 #[derive(Clone, Copy)]
 pub enum Face {
@@ -69,7 +69,7 @@ impl Information {
 		self.outgoing = self.outgoing.max(value);
 	}
 
-	pub fn write<T>(&self, w: &mut dyn Write, id: NodeId, label: T) -> IResult<()>
+	pub fn write<T>(&self, w: &mut dyn Write, id: Id, label: T) -> IResult<()>
 	where
 		T: Display,
 	{
