@@ -20,6 +20,7 @@ impl MarkAndSweep {
 		let seen = self.post_order.seen();
 
 		graph.nodes.retain(|id, _| seen.contains(&id));
+		graph.regions.retain(|id, _| seen.contains(id));
 	}
 
 	/// Removes unreachable nodes from the graph.

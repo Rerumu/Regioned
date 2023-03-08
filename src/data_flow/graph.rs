@@ -97,9 +97,8 @@ impl<S> Graph<S> {
 
 	/// Removes a [`Node::Compound`] with regions from the graph and returns it.
 	pub fn remove_compound(&mut self, id: Id) -> Option<Compound> {
-		for &region in self.regions.get(&id)? {
-			self.nodes.remove(region.start());
-			self.nodes.remove(region.end());
+		for region in self.regions.remove(&id)? {
+			self.remove_region(region);
 		}
 
 		self.nodes
