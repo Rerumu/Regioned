@@ -32,6 +32,7 @@ impl<S> Graph<S> {
 	/// Clears the graph. Keeps the allocated memory for reuse.
 	pub fn clear(&mut self) {
 		self.nodes.clear();
+		self.regions.clear();
 	}
 
 	/// Adds a [`Node`] to the graph and returns its [`Id`].
