@@ -214,7 +214,7 @@ where
 	///
 	/// If writing to the writer fails.
 	pub fn write(&mut self, w: &mut dyn Write, roots: &[Id]) -> Result<()> {
-		const NODE_ATTRIBUTES: &str = r##"shape = record, style = filled, fillcolor = "#DDDDFF", width = 0, height = 0, margin = "0.05,0.02""##;
+		const NODE_ATTRIBUTES: &str = r##"shape = plain, style = filled, fillcolor = "#DDDDFF""##;
 
 		writeln!(w, "digraph {{")?;
 		writeln!(w, "node [{NODE_ATTRIBUTES}];")?;

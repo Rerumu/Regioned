@@ -40,17 +40,13 @@ impl Ports {
 
 impl Display for Ports {
 	fn fmt(&self, f: &mut Formatter<'_>) -> FResult {
-		write!(f, "{{")?;
+		write!(f, "<TR>")?;
 
 		for i in 0..self.len {
-			if i != 0 {
-				write!(f, "|")?;
-			}
-
-			write!(f, "<{}{i}>{i}", self.face.name())?;
+			write!(f, r#"<TD PORT="{}{i}">{}</TD>"#, self.face.name(), i + 1)?;
 		}
 
-		write!(f, "}}")
+		write!(f, "</TR>")
 	}
 }
 
@@ -73,18 +69,20 @@ impl Information {
 	where
 		T: Display,
 	{
-		write!(w, "{id} [label = \"{{")?;
+		write!(w, r#"{id} [label = <<TABLE CELLSPACING="0">"#)?;
 
 		if let Some(ports) = Ports::new(Face::Incoming, self.incoming) {
-			write!(w, "{ports} | ")?;
+			write!(w, "{ports}")?;
 		}
 
-		write!(w, "{label}")?;
+		let span = self.incoming.max(self.outgoing).max(1);
+
+		write!(w, r#"<TR><TD COLSPAN="{span}">{label}</TD></TR>"#)?;
 
 		if let Some(ports) = Ports::new(Face::Outgoing, self.outgoing) {
-			write!(w, " | {ports}")?;
+			write!(w, "{ports}")?;
 		}
 
-		writeln!(w, "}}\"];")
+		writeln!(w, "</TABLE>>];")
 	}
 }
