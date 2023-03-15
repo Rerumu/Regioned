@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use arena::key::Key;
 use tinyvec::TinyVec;
 
 use crate::data_flow::{graph::Graph, node::Id};
@@ -36,7 +35,7 @@ impl Successors {
 		I: IntoIterator<Item = Id>,
 	{
 		self.post_order.run_with(graph, roots, |id| {
-			for v in &graph.predecessors[id.index()] {
+			for v in &graph.predecessors[id] {
 				let successors = self.cache.entry(v.node()).or_default();
 
 				if !successors.contains(&id) {

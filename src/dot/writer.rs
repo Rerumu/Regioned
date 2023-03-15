@@ -3,8 +3,6 @@ use std::{
 	io::{Result, Write},
 };
 
-use arena::key::Key;
-
 use crate::data_flow::{
 	graph::Graph,
 	link::Link,
@@ -62,7 +60,7 @@ impl<S> GraphExt<S> for Graph<S> {
 	}
 
 	fn add_links_redirected(&self, w: &mut dyn Write, to: Id, from: Id) -> Result<()> {
-		self.predecessors[from.index()]
+		self.predecessors[from]
 			.iter()
 			.copied()
 			.enumerate()
@@ -95,7 +93,7 @@ impl<'a, S> Writer<'a, S> {
 		self.information.clear();
 
 		for id in self.graph.nodes.keys() {
-			let list = &self.graph.predecessors[id.index()];
+			let list = &self.graph.predecessors[id];
 			let face = self.graph.get_face_incoming(id);
 
 			self.information
@@ -127,7 +125,7 @@ where
 	S: Tooltip,
 {
 	fn add_nodes_incoming(&mut self, w: &mut dyn Write, id: Id) -> Result<()> {
-		self.graph.predecessors[id.index()]
+		self.graph.predecessors[id]
 			.iter()
 			.copied()
 			.map(Link::node)

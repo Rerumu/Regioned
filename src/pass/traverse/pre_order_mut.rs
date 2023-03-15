@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use arena::key::Key;
-
 use crate::data_flow::{graph::Graph, node::Id};
 
 /// A pre-order traversal of the graph.
@@ -35,7 +33,7 @@ impl PreOrderMut {
 			}
 		}
 
-		for link in &graph.predecessors[id.index()] {
+		for link in &graph.predecessors[id] {
 			self.add_guarded(link.node());
 		}
 	}
