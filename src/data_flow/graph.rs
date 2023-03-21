@@ -10,7 +10,7 @@ use super::{
 
 pub use arena::key::Key;
 
-pub type PredecessorList = TinyVec<[Link; 2]>;
+pub type PredecessorList = TinyVec<[Link; 3]>;
 pub type RegionList = TinyVec<[Region; 1]>;
 
 /// A Regionalized Value State Dependence Graph.
