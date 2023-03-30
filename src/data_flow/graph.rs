@@ -57,12 +57,11 @@ impl<S> Graph<S> {
 	#[must_use]
 	pub fn add_node(&mut self, node: Node<S>) -> Id {
 		let id = self.nodes.insert(node);
-		let index = id.index();
 
-		if let Some(last) = self.predecessors.get_mut(index) {
+		if let Some(last) = self.predecessors.get_mut(id.index()) {
 			*last = TinyVec::new();
 		} else {
-			self.predecessors.resize_with(index + 1, TinyVec::new);
+			self.predecessors.push(TinyVec::new());
 		}
 
 		id
