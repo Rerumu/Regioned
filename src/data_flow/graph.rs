@@ -102,15 +102,11 @@ impl<S> Graph<S> {
 		(id, region)
 	}
 
-	/// Adds a [`Compound::Gamma`] node with [`Region`]s to the graph and returns its [`Id`].
+	/// Adds a [`Compound::Gamma`] node with the [`RegionList`] to the graph and returns its [`Id`].
 	#[inline]
 	#[must_use]
-	pub fn add_gamma<I>(&mut self, regions: I) -> Id
-	where
-		I: IntoIterator<Item = Region>,
-	{
+	pub fn add_gamma(&mut self, regions: RegionList) -> Id {
 		let id = self.add_node(Compound::Gamma.into());
-		let regions = regions.into_iter().collect();
 
 		self.regions.insert(id, regions);
 
