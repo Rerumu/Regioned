@@ -11,7 +11,7 @@ use super::{
 pub use arena::key::Key;
 
 pub type PredecessorList = TinyVec<[Link; 3]>;
-pub type RegionList = TinyVec<[Region; 1]>;
+pub type RegionList = TinyVec<[Region; 2]>;
 
 /// A Regionalized Value State Dependence Graph.
 ///
@@ -97,7 +97,7 @@ impl<S> Graph<S> {
 		let id = self.add_node(compound.into());
 		let region = self.add_region();
 
-		self.regions.insert(id, [region].into());
+		self.regions.insert(id, [region].into_iter().collect());
 
 		(id, region)
 	}
