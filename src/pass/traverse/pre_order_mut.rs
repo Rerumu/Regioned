@@ -1,12 +1,10 @@
-use hashbrown::HashSet;
-
 use crate::data_flow::{graph::Graph, node::Id};
 
 /// A pre-order traversal of the graph.
 /// It visits every reachable node, starting at the roots and ending at the leaves.
 #[derive(Default)]
 pub struct PreOrderMut {
-	seen: HashSet<Id>,
+	seen: Vec<bool>,
 	queue: Vec<(Id, bool)>,
 }
 
@@ -18,10 +16,11 @@ impl PreOrderMut {
 	}
 
 	fn add_guarded(&mut self, id: Id) {
-		if !self.seen.insert(id) {
+		if self.seen[id] {
 			return;
 		}
 
+		self.seen[id] = true;
 		self.queue.push((id, false));
 	}
 
@@ -40,7 +39,7 @@ impl PreOrderMut {
 
 	/// Returns the nodes that have been seen.
 	#[must_use]
-	pub fn seen(&self) -> &HashSet<Id> {
+	pub fn seen(&self) -> &[bool] {
 		&self.seen
 	}
 
@@ -52,6 +51,7 @@ impl PreOrderMut {
 		O: FnMut(&mut Graph<S>, Id),
 	{
 		self.seen.clear();
+		self.seen.resize(graph.active(), false);
 
 		roots.into_iter().for_each(|id| self.add_guarded(id));
 

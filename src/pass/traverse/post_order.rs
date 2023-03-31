@@ -1,12 +1,10 @@
-use hashbrown::HashSet;
-
 use crate::data_flow::{graph::Graph, node::Id};
 
 /// A post-order traversal of the graph.
 /// It visits every reachable node, starting at the roots and ending at the leaves.
 #[derive(Default)]
 pub struct PostOrder {
-	seen: HashSet<Id>,
+	seen: Vec<bool>,
 	queue: Vec<Id>,
 }
 
@@ -18,10 +16,11 @@ impl PostOrder {
 	}
 
 	fn add_guarded(&mut self, id: Id) {
-		if !self.seen.insert(id) {
+		if self.seen[id] {
 			return;
 		}
 
+		self.seen[id] = true;
 		self.queue.push(id);
 	}
 
@@ -40,7 +39,7 @@ impl PostOrder {
 
 	/// Returns the nodes that have been seen.
 	#[must_use]
-	pub fn seen(&self) -> &HashSet<Id> {
+	pub fn seen(&self) -> &[bool] {
 		&self.seen
 	}
 
@@ -51,6 +50,7 @@ impl PostOrder {
 		O: FnMut(&Graph<S>, Id),
 	{
 		self.seen.clear();
+		self.seen.resize(graph.active(), false);
 
 		roots.into_iter().for_each(|id| self.add_guarded(id));
 

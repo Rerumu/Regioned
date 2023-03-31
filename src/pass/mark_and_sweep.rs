@@ -19,8 +19,8 @@ impl MarkAndSweep {
 	fn sweep<S>(&self, graph: &mut Graph<S>) {
 		let seen = self.post_order.seen();
 
-		graph.nodes.retain(|id, _| seen.contains(&id));
-		graph.regions.retain(|id, _| seen.contains(id));
+		graph.nodes.retain(|id, _| seen[id]);
+		graph.regions.retain(|id, _| seen[*id]);
 	}
 
 	/// Removes unreachable nodes from the graph.

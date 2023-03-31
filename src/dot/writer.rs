@@ -1,6 +1,6 @@
 use std::io::{Result, Write};
 
-use hashbrown::{HashMap, HashSet};
+use hashbrown::HashMap;
 
 use crate::data_flow::{
 	graph::Graph,
@@ -73,7 +73,7 @@ impl<S> GraphExt<S> for Graph<S> {
 
 pub struct Writer<'a, S> {
 	information: HashMap<Id, Information>,
-	visited: HashSet<Id>,
+	seen: Vec<bool>,
 	graph: &'a Graph<S>,
 }
 
@@ -83,7 +83,7 @@ impl<'a, S> Writer<'a, S> {
 	pub fn new(graph: &'a Graph<S>) -> Self {
 		Self {
 			information: HashMap::new(),
-			visited: HashSet::new(),
+			seen: Vec::new(),
 			graph,
 		}
 	}
@@ -167,9 +167,11 @@ where
 	}
 
 	fn add_node(&mut self, w: &mut dyn Write, id: Id) -> Result<()> {
-		if !self.visited.insert(id) {
+		if self.seen[id] {
 			return Ok(());
 		}
+
+		self.seen[id] = true;
 
 		let Some(node) = self.graph.nodes.get(id) else { return self.add_bad_node(w, id) };
 
@@ -218,7 +220,9 @@ where
 		writeln!(w, "style = filled;")?;
 
 		self.initialize_info();
-		self.visited.clear();
+
+		self.seen.clear();
+		self.seen.resize(self.graph.active(), false);
 
 		self.add_reachable(w, roots)?;
 		self.add_not_unreachable(w)?;

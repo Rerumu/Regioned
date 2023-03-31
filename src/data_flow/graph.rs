@@ -44,6 +44,13 @@ impl<S> Graph<S> {
 		}
 	}
 
+	/// Returns the total number of active indices in the [`Graph`].
+	#[inline]
+	#[must_use]
+	pub fn active(&self) -> usize {
+		self.nodes.keys().next_back().map_or(0, |id| id.index() + 1)
+	}
+
 	/// Clears the graph. Keeps the allocated memory for reuse.
 	#[inline]
 	pub fn clear(&mut self) {
