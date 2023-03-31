@@ -1,7 +1,6 @@
-use std::{
-	collections::{HashMap, HashSet},
-	io::{Result, Write},
-};
+use std::io::{Result, Write};
+
+use hashbrown::{HashMap, HashSet};
 
 use crate::data_flow::{
 	graph::Graph,

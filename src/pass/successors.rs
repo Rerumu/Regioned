@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use hashbrown::HashMap;
 use tinyvec::TinyVec;
 
 use crate::data_flow::{graph::Graph, node::Id};

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use arena::collection::Arena;
+use hashbrown::HashMap;
 use tinyvec::TinyVec;
 
 use super::{
