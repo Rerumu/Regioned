@@ -4,15 +4,12 @@ use tinyvec::TinyVec;
 
 use crate::data_flow::{graph::Graph, node::Id};
 
-use super::traverse::post_order::PostOrder;
-
 pub type SuccessorList = TinyVec<[Id; 2]>;
 
 /// A node successor finder.
 /// It caches the successors for each node after a traversal.
 #[derive(Default)]
 pub struct Successors {
-	post_order: PostOrder,
 	cache: HashMap<Id, SuccessorList>,
 }
 
@@ -30,11 +27,8 @@ impl Successors {
 	}
 
 	/// Finds all successors coming back from the roots.
-	pub fn run<S, I>(&mut self, graph: &Graph<S>, roots: I)
-	where
-		I: IntoIterator<Item = Id>,
-	{
-		self.post_order.run_with(graph, roots, |id| {
+	pub fn pass<'a, S: 'a>(&'a mut self) -> impl FnMut(&Graph<S>, Id) + 'a {
+		|graph, id| {
 			for v in &graph.predecessors[id] {
 				let successors = self.cache.entry(v.node()).or_default();
 
@@ -42,6 +36,6 @@ impl Successors {
 					successors.push(id);
 				}
 			}
-		});
+		}
 	}
 }

@@ -48,14 +48,14 @@ impl PostOrder {
 	pub fn run_with<S, I, O>(&mut self, graph: &Graph<S>, roots: I, mut operation: O)
 	where
 		I: IntoIterator<Item = Id>,
-		O: FnMut(Id),
+		O: FnMut(&Graph<S>, Id),
 	{
 		self.seen.clear();
 
 		roots.into_iter().for_each(|id| self.add_guarded(id));
 
 		while let Some(id) = self.queue.pop() {
-			operation(id);
+			operation(graph, id);
 
 			self.add_neighbors(graph, id);
 		}
@@ -66,6 +66,6 @@ impl PostOrder {
 	where
 		I: IntoIterator<Item = Id>,
 	{
-		self.run_with(graph, roots, |_| {});
+		self.run_with(graph, roots, |_, _| {});
 	}
 }
