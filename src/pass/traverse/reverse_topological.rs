@@ -1,15 +1,15 @@
 use crate::data_flow::{graph::Graph, node::Id};
 
-/// A pre-order traversal of the graph.
+/// A reverse topological traversal of the graph.
 /// It visits every reachable node, starting at the roots and ending at the leaves.
 #[derive(Default)]
-pub struct PreOrder {
+pub struct ReverseTopological {
 	seen: Vec<bool>,
 	queue: Vec<(Id, bool)>,
 }
 
-impl PreOrder {
-	/// Creates a new, reusable [`PreOrder`] instance.
+impl ReverseTopological {
+	/// Creates a new, reusable [`ReverseTopological`] instance.
 	#[must_use]
 	pub fn new() -> Self {
 		Self::default()

@@ -1,15 +1,15 @@
 use crate::data_flow::{graph::Graph, node::Id};
 
-/// A post-order traversal of the graph.
+/// A topological traversal of the graph.
 /// It visits every reachable node, starting at the roots and ending at the leaves.
 #[derive(Default)]
-pub struct PostOrder {
+pub struct Topological {
 	seen: Vec<bool>,
 	queue: Vec<Id>,
 }
 
-impl PostOrder {
-	/// Creates a new, reusable [`PostOrder`] instance.
+impl Topological {
+	/// Creates a new, reusable [`Topological`] instance.
 	#[must_use]
 	pub fn new() -> Self {
 		Self::default()
