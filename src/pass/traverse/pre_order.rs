@@ -3,13 +3,13 @@ use crate::data_flow::{graph::Graph, node::Id};
 /// A pre-order traversal of the graph.
 /// It visits every reachable node, starting at the roots and ending at the leaves.
 #[derive(Default)]
-pub struct PreOrderMut {
+pub struct PreOrder {
 	seen: Vec<bool>,
 	queue: Vec<(Id, bool)>,
 }
 
-impl PreOrderMut {
-	/// Creates a new, reusable [`PreOrderMut`] instance.
+impl PreOrder {
+	/// Creates a new, reusable [`PreOrder`] instance.
 	#[must_use]
 	pub fn new() -> Self {
 		Self::default()
@@ -43,17 +43,47 @@ impl PreOrderMut {
 		&self.seen
 	}
 
-	/// Traverses the graph, applying the `operation` on every node.
-	/// The `operation` is allowed to modify the graph.
-	pub fn run_with<S, I, O>(&mut self, graph: &mut Graph<S>, roots: I, mut operation: O)
+	fn set_up_roots<S, I>(&mut self, graph: &Graph<S>, roots: I)
 	where
 		I: IntoIterator<Item = Id>,
-		O: FnMut(&mut Graph<S>, Id),
 	{
 		self.seen.clear();
 		self.seen.resize(graph.active(), false);
 
 		roots.into_iter().for_each(|id| self.add_guarded(id));
+	}
+
+	/// Traverses the graph, applying the `operation` on every node.
+	pub fn run_with<S, I, O>(&mut self, graph: &Graph<S>, roots: I, mut operation: O)
+	where
+		I: IntoIterator<Item = Id>,
+		O: FnMut(&Graph<S>, Id),
+	{
+		self.set_up_roots(graph, roots);
+
+		while let Some(entry) = self.queue.last_mut() {
+			let id = entry.0;
+
+			if entry.1 {
+				operation(graph, id);
+
+				self.queue.pop();
+			} else {
+				entry.1 = true;
+
+				self.add_neighbors(graph, id);
+			}
+		}
+	}
+
+	/// Traverses the graph, applying the `operation` on every node.
+	/// The `operation` is allowed to modify the graph.
+	pub fn run_with_mut<S, I, O>(&mut self, graph: &mut Graph<S>, roots: I, mut operation: O)
+	where
+		I: IntoIterator<Item = Id>,
+		O: FnMut(&mut Graph<S>, Id),
+	{
+		self.set_up_roots(graph, roots);
 
 		while let Some(entry) = self.queue.last_mut() {
 			let id = entry.0;
