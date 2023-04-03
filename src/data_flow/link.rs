@@ -3,7 +3,7 @@ use std::num::TryFromIntError;
 use super::node::Id;
 
 /// An index of a port to either an input or output.
-#[derive(Default, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Port {
 	index: u16,
 }
@@ -47,7 +47,7 @@ impl TryFrom<usize> for Port {
 
 /// A relationship between an [`Id`] and a [`Port`]. Two of these together
 /// represent a connection between two nodes.
-#[derive(Default, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Link {
 	node: Id,
 	port: Port,

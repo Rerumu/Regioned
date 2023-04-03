@@ -9,7 +9,7 @@ pub type Id = arena::key::Id<arena::version::Nil>;
 /// A region.
 ///
 /// It has a start and an end marker that delimit it.
-#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Region {
 	start: Id,
 	end: Id,
