@@ -65,9 +65,9 @@ impl<S> Graph<S> {
 		let id = self.nodes.insert(node);
 
 		if let Some(last) = self.predecessors.get_mut(id.index()) {
-			*last = TinyVec::new();
+			*last = PredecessorList::new();
 		} else {
-			self.predecessors.push(TinyVec::new());
+			self.predecessors.push(PredecessorList::new());
 		}
 
 		id
