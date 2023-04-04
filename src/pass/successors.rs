@@ -26,7 +26,7 @@ impl Successors {
 	}
 
 	/// Finds all successors coming back from the roots.
-	pub fn pass<'a, S: 'a>(&'a mut self) -> impl FnMut(&Graph<S>, Id) + 'a {
+	pub fn pass<S>(&mut self) -> impl FnMut(&Graph<S>, Id) + '_ {
 		|graph, id| {
 			for v in &graph.predecessors[id] {
 				let successors = self.cache.entry(v.node()).or_default();
