@@ -1,12 +1,12 @@
 use crate::data_flow::{graph::Graph, node::Id};
 
-use super::traverse::topological::Topological;
+use super::traverse::reverse_topological::ReverseTopological;
 
 /// A mark-and-sweep algorithm for removing unreachable nodes from the graph.
 /// It uses a shallow traversal which may result in logically unreachable nodes being retained.
 #[derive(Default)]
 pub struct MarkAndSweep {
-	topological: Topological,
+	topological: ReverseTopological,
 }
 
 impl MarkAndSweep {
