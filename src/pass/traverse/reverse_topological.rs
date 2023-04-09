@@ -140,3 +140,57 @@ impl ReverseTopological {
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use crate::data_flow::{graph::Graph, node::Node};
+
+	use super::ReverseTopological;
+
+	#[test]
+	fn test_is_in_order() {
+		let mut graph = Graph::new();
+
+		let region_1 = graph.add_region();
+		let value_1 = graph.add_node(Node::Simple(()));
+		let value_2 = graph.add_node(Node::Simple(()));
+
+		graph.predecessors[value_1].push(region_1.start().into());
+		graph.predecessors[value_2].push(value_1.into());
+		graph.predecessors[region_1.end()].push(value_2.into());
+
+		let region_2 = graph.add_region();
+		let value_3 = graph.add_node(Node::Simple(()));
+		let value_4 = graph.add_node(Node::Simple(()));
+
+		graph.predecessors[value_3].push(region_2.start().into());
+		graph.predecessors[value_4].push(region_2.start().into());
+		graph.predecessors[region_2.end()].push(value_3.into());
+		graph.predecessors[region_2.end()].push(value_4.into());
+
+		let value_5 = graph.add_node(Node::Simple(()));
+		let gamma = graph.add_gamma([region_1, region_2].into());
+
+		let mut counter = 0;
+		let mut expected = vec![0; graph.active()];
+
+		expected[region_1.start()] = 1;
+		expected[value_1] = 2;
+		expected[value_2] = 3;
+		expected[region_1.end()] = 4;
+
+		expected[region_2.start()] = 5;
+		expected[value_3] = 6;
+		expected[value_4] = 7;
+		expected[region_2.end()] = 8;
+
+		expected[gamma] = 9;
+		expected[value_5] = 10;
+
+		ReverseTopological::new().run_with(&graph, [gamma, value_5], |_, id| {
+			counter += 1;
+
+			assert_eq!(expected[id], counter, "Node {id} was not in order");
+		});
+	}
+}
