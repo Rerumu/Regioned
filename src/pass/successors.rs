@@ -1,7 +1,8 @@
-use hashbrown::HashMap;
 use tinyvec::TinyVec;
 
 use crate::data_flow::{graph::Graph, node::Id};
+
+use super::traverse::reverse_topological::ReverseTopological;
 
 pub type SuccessorList = TinyVec<[Id; 2]>;
 
@@ -9,19 +10,19 @@ pub type SuccessorList = TinyVec<[Id; 2]>;
 /// It caches the successors for each node after a traversal.
 #[derive(Default)]
 pub struct Successors {
-	cache: HashMap<Id, SuccessorList>,
+	cache: Vec<SuccessorList>,
 }
 
 impl Successors {
 	/// Creates a new, reusable [`Successors`] instance.
 	#[must_use]
-	pub fn new() -> Self {
-		Self::default()
+	pub const fn new() -> Self {
+		Self { cache: Vec::new() }
 	}
 
 	/// Returns the cached successors.
 	#[must_use]
-	pub fn cache(&self) -> &HashMap<Id, SuccessorList> {
+	pub fn cache(&self) -> &[SuccessorList] {
 		&self.cache
 	}
 
@@ -30,18 +31,27 @@ impl Successors {
 		self.cache.clear();
 	}
 
-	/// Finds all successors coming back from the roots.
-	pub fn pass<S>(&mut self) -> impl FnMut(&Graph<S>, Id) + '_ {
-		|graph, id| {
-			for v in &graph.predecessors[id] {
-				let successors = self.cache.entry(v.node()).or_default();
+	/// Finds and caches all successors coming back from the roots.
+	pub fn run<S, I>(&mut self, graph: &Graph<S>, roots: I, topological: &mut ReverseTopological)
+	where
+		I: IntoIterator<Item = Id>,
+	{
+		let active = graph.active();
+
+		self.cache.iter_mut().for_each(SuccessorList::clear);
+
+		if self.cache.len() < active {
+			self.cache.resize_with(active, SuccessorList::new);
+		}
+
+		topological.run_with(graph, roots, |graph, id| {
+			for predecessor in &graph.predecessors[id] {
+				let successors = &mut self.cache[predecessor.node()];
 
 				if !successors.contains(&id) {
 					successors.push(id);
 				}
 			}
-
-			self.cache.entry(id).or_default();
-		}
+		});
 	}
 }

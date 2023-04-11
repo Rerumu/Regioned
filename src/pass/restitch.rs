@@ -19,7 +19,7 @@ pub fn redo_ports<M>(
 {
 	let relevant = |predecessor: &&mut Link| predecessor.node() == from;
 
-	for &successors in &successors.cache()[&from] {
+	for &successors in &successors.cache()[from] {
 		for predecessor in predecessors[successors].iter_mut().filter(relevant) {
 			if let Some(port) = redo(predecessor.port()) {
 				*predecessor = Link::new(to, port);
