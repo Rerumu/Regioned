@@ -40,6 +40,8 @@ impl Successors {
 					successors.push(id);
 				}
 			}
+
+			self.cache.entry(id).or_default();
 		}
 	}
 }
