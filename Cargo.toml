@@ -3,6 +3,9 @@ name = "regioned"
 version = "1.0.0"
 edition = "2021"
 
+[features]
+dot = []
+
 [dependencies]
 hashbrown = "=0.13.2"
 tinyvec = { version = "=1.6.0", features = ["alloc"] }
