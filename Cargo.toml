@@ -1,0 +1,12 @@
+[package]
+name = "regioned"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+hashbrown = "=0.13.2"
+tinyvec = { version = "=1.6.0", features = ["alloc"] }
+
+[dependencies.arena]
+git = "https://github.com/Rerumu/Arena"
+rev = "db2f439"
