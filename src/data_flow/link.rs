@@ -77,7 +77,7 @@ impl Link {
 
 	/// Returns an iterator over all [`Link`]s starting from the current one.
 	pub fn iter(self) -> impl Iterator<Item = Self> {
-		self.port.iter().map(move |p| Link::new(self.node, p))
+		self.port.iter().map(move |p| Self::new(self.node, p))
 	}
 }
 

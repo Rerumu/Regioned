@@ -12,14 +12,14 @@ pub enum Face {
 }
 
 impl Face {
-	pub fn direction(self) -> &'static str {
+	pub const fn direction(self) -> &'static str {
 		match self {
 			Self::Incoming => "n",
 			Self::Outgoing => "s",
 		}
 	}
 
-	pub fn name(self) -> &'static str {
+	pub const fn name(self) -> &'static str {
 		match self {
 			Self::Incoming => "in",
 			Self::Outgoing => "out",

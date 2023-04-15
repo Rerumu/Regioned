@@ -15,7 +15,7 @@ pub enum Named {
 }
 
 impl Named {
-	fn color(self) -> &'static str {
+	const fn color(self) -> &'static str {
 		match self {
 			Self::Gamma => "#8b81e8",
 			Self::Theta => "#bb84ca",
@@ -27,7 +27,7 @@ impl Named {
 		}
 	}
 
-	fn label(self) -> &'static str {
+	const fn label(self) -> &'static str {
 		match self {
 			Self::Gamma => "Gamma",
 			Self::Theta => "Theta",
