@@ -38,16 +38,21 @@ pub fn redo_ports_in_place(
 	redo_ports(predecessors, successors, from, to, Some);
 }
 
-/// Applies the rule `applier` to the graph nodes.
-/// If the rule succeeds, the result is passed to `stitcher` and the node is updated.
-pub const fn pass<A, B, S, U>(mut applier: A, mut stitcher: B) -> impl FnMut(&mut Graph<S>, Id)
+/// Applies the rule `applier` to the graph nodes. If the rule succeeds,
+/// the result is passed to `stitcher`, the node is updated, and the old node is returned.
+pub const fn pass<A, B, S, U>(
+	mut applier: A,
+	mut stitcher: B,
+) -> impl FnMut(&mut Graph<S>, Id) -> Option<Node<S>>
 where
 	A: FnMut(&mut Graph<S>, Id) -> Option<U>,
 	B: FnMut(&mut Graph<S>, Id, U) -> Node<S>,
 {
 	move |graph, id| {
-		if let Some(result) = applier(graph, id) {
-			graph.nodes[id] = stitcher(graph, id, result);
-		}
+		applier(graph, id).map(|result| {
+			let node = stitcher(graph, id, result);
+
+			std::mem::replace(&mut graph.nodes[id], node)
+		})
 	}
 }
