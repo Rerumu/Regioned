@@ -66,7 +66,7 @@ impl ReverseTopological {
 		} else {
 			let count = region_count_checked(graph, id);
 
-			self.stack.push(Entry::Regions { id, count });
+			self.handle_region(graph, count, id);
 		}
 	}
 
