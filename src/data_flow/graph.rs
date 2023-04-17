@@ -103,7 +103,7 @@ impl<S> Graph<S> {
 		let id = self.add_node(compound.into());
 		let region = self.add_region();
 
-		self.regions.insert(id, [region].into_iter().collect());
+		self.regions.insert(id, std::iter::once(region).collect());
 
 		(id, region)
 	}
