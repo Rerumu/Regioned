@@ -39,7 +39,7 @@ impl RelaxDependencies {
 		self.maps.extend(iter);
 	}
 
-	fn run_gamma<S>(&mut self, graph: &mut Graph<S>, id: Id) {
+	fn run_gamma<S>(&mut self, graph: &Graph<S>, id: Id) {
 		let mut regions = graph.regions[&id].iter();
 		let region = *regions.next().expect("`Gamma` has no region");
 
@@ -56,7 +56,7 @@ impl RelaxDependencies {
 		}
 	}
 
-	fn run_theta<S>(&mut self, graph: &mut Graph<S>, id: Id) {
+	fn run_theta<S>(&mut self, graph: &Graph<S>, id: Id) {
 		let region = *graph.regions[&id].first().expect("`Theta` has no region");
 
 		// This will technically include the `Theta` condition, but
