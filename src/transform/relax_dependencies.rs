@@ -62,6 +62,15 @@ impl RelaxDependencies {
 		// This will technically include the `Theta` condition, but
 		// it won't be used anyway as it's not output.
 		self.add_map_results(&graph.predecessors, region, id);
+
+		let results = graph.predecessors[region.end()].iter().copied();
+		let inputs = Link::from(region.start()).iter();
+
+		for ((result, start), old) in results.zip(inputs).zip(&mut self.maps) {
+			if result != start {
+				*old = None;
+			}
+		}
 	}
 
 	pub fn run<S>(&mut self, graph: &mut Graph<S>, id: Id, successors: &Successors) -> usize {
