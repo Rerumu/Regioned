@@ -11,7 +11,7 @@ tinyvec = { version = "=1.6.0", features = ["alloc"] }
 
 [dependencies.arena]
 git = "https://github.com/Rerumu/Arena"
-rev = "db2f439"
+rev = "91f3d06"
 
 [dev-dependencies]
 criterion = "=0.4.0"
