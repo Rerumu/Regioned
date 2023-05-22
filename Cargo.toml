@@ -7,7 +7,6 @@ edition = "2021"
 dot = []
 
 [dependencies]
-hashbrown = "=0.13.2"
 tinyvec = { version = "=1.6.0", features = ["alloc"] }
 
 [dependencies.arena]
