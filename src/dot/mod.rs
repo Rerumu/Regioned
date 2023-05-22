@@ -1,7 +1,7 @@
-mod node;
-mod region;
-mod writer;
+//! Debug writer and utilities for the DOT language.
 
-pub mod label;
+mod data;
+mod description;
+mod template;
 
-pub use self::writer::Dot;
+pub use self::{data::Dot, description::Description};
