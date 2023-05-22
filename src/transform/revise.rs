@@ -1,32 +1,29 @@
 use crate::{
 	data_flow::{
-		graph::{Graph, PredecessorList},
-		link::{Link, Port},
-		node::{Id, Node},
+		link::{Id, Link},
+		node::{Node, ParametersMut},
+		nodes::Nodes,
 	},
 	visit::successors::Successors,
 };
 
 /// Redoes the ports of the successors of the node `id` to point elsewhere.
 /// The ports are updated using the function `redo`.
-pub fn redo_ports<F>(
-	predecessors: &mut [PredecessorList],
-	successors: &Successors,
-	id: Id,
-	redo: F,
-) -> usize
+pub fn redo_ports<S, F>(nodes: &mut Nodes<S>, successors: &Successors, id: Id, redo: F) -> usize
 where
-	F: Fn(Port) -> Option<Link>,
+	S: ParametersMut,
+	F: Fn(u16) -> Option<Link>,
 {
-	let relevant = |predecessor: &&mut Link| predecessor.node() == id;
 	let mut applied = 0;
 
-	for &successors in &successors.cache()[id] {
-		for predecessor in predecessors[successors].iter_mut().filter(relevant) {
-			if let Some(link) = redo(predecessor.port()) {
-				*predecessor = link;
+	for &successor in &successors.cache()[id] {
+		for predecessor in nodes[successor].parameters_mut() {
+			if predecessor.node == id {
+				if let Some(link) = redo(predecessor.port) {
+					*predecessor = link;
 
-				applied += 1;
+					applied += 1;
+				}
 			}
 		}
 	}
@@ -35,14 +32,17 @@ where
 }
 
 /// Redoes the ports of the successors of the node `from` to point to the node `to`.
-pub fn redo_ports_in_place(
-	predecessors: &mut [PredecessorList],
+pub fn redo_ports_in_place<S>(
+	nodes: &mut Nodes<S>,
 	successors: &Successors,
 	from: Id,
 	to: Id,
-) -> usize {
-	redo_ports(predecessors, successors, from, |port| {
-		Some(Link::new(to, port))
+) -> usize
+where
+	S: ParametersMut,
+{
+	redo_ports(nodes, successors, from, |port| {
+		Some(Link { node: to, port })
 	})
 }
 
@@ -51,16 +51,16 @@ pub fn redo_ports_in_place(
 pub const fn single<A, B, S, U>(
 	mut rule: A,
 	mut stitch: B,
-) -> impl FnMut(&mut Graph<S>, Id) -> Option<Node<S>>
+) -> impl FnMut(&mut Nodes<S>, Id) -> Option<Node<S>>
 where
-	A: FnMut(&mut Graph<S>, Id) -> Option<U>,
-	B: FnMut(&mut Graph<S>, Id, U) -> Node<S>,
+	A: FnMut(&mut Nodes<S>, Id) -> Option<U>,
+	B: FnMut(&mut Nodes<S>, Id, U) -> Node<S>,
 {
-	move |graph, id| {
-		rule(graph, id).map(|result| {
-			let node = stitch(graph, id, result);
+	move |nodes, id| {
+		rule(nodes, id).map(|result| {
+			let node = stitch(nodes, id, result);
 
-			std::mem::replace(&mut graph.nodes[id], node)
+			std::mem::replace(&mut nodes[id], node)
 		})
 	}
 }
