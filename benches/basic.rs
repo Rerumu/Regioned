@@ -1,9 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion, Throughput};
 
-use regioned::data_flow::{
-	graph::Graph,
-	node::{Compound, Node},
-};
+use regioned::data_flow::nodes::Nodes;
 
 const NUM_ELEMENTS: u64 = 2048;
 
@@ -16,30 +13,29 @@ pub fn bench_add(c: &mut Criterion) {
 
 	group.bench_function("Node", |b| {
 		b.iter_with_large_drop(|| {
-			let mut graph = Graph::new();
+			let mut nodes = Nodes::new();
 
 			for i in 0..NUM_ELEMENTS {
-				let value = Node::Simple(NoOp(i));
-				let id = graph.add_node(value);
+				let id = nodes.add_simple(NoOp(i));
 
 				black_box(id);
 			}
 
-			graph
+			nodes
 		});
 	});
 
 	group.bench_function("Phi", |b| {
 		b.iter_with_large_drop(|| {
-			let mut graph = Graph::<NoOp>::new();
+			let mut nodes = Nodes::<NoOp>::new();
 
 			for _ in 0..NUM_ELEMENTS {
-				let result = graph.add_compound(Compound::Phi);
+				let result = nodes.add_phi();
 
 				black_box(result);
 			}
 
-			graph
+			nodes
 		});
 	});
 }
@@ -52,20 +48,20 @@ pub fn bench_remove(c: &mut Criterion) {
 	group.bench_function("Node", |b| {
 		b.iter_batched_ref(
 			|| {
-				let mut graph = Graph::new();
+				let mut nodes = Nodes::new();
 				let mut indices = Vec::new();
 
 				for i in 0..NUM_ELEMENTS {
-					let value = Node::Simple(NoOp(i));
+					let id = nodes.add_simple(NoOp(i));
 
-					indices.push(graph.add_node(value));
+					indices.push(id);
 				}
 
-				(graph, indices)
+				(nodes, indices)
 			},
-			|(graph, indices)| {
+			|(nodes, indices)| {
 				for &mut index in indices {
-					graph.remove_node(index);
+					nodes.remove(index);
 				}
 			},
 			BatchSize::LargeInput,
@@ -75,20 +71,20 @@ pub fn bench_remove(c: &mut Criterion) {
 	group.bench_function("Phi", |b| {
 		b.iter_batched_ref(
 			|| {
-				let mut graph = Graph::<NoOp>::new();
+				let mut nodes = Nodes::<NoOp>::new();
 				let mut indices = Vec::new();
 
 				for _ in 0..NUM_ELEMENTS {
-					let result = graph.add_compound(Compound::Phi);
+					let result = nodes.add_phi();
 
 					indices.push(result.0);
 				}
 
-				(graph, indices)
+				(nodes, indices)
 			},
-			|(graph, indices)| {
+			|(nodes, indices)| {
 				for &mut index in indices {
-					graph.remove_compound(index);
+					nodes.remove(index);
 				}
 			},
 			BatchSize::LargeInput,
@@ -97,15 +93,14 @@ pub fn bench_remove(c: &mut Criterion) {
 }
 
 fn bench_iteration(c: &mut Criterion) {
-	fn setup() -> Graph<NoOp> {
-		let mut graph = Graph::new();
+	fn setup() -> Nodes<NoOp> {
+		let mut nodes = Nodes::new();
 
 		for i in 0..NUM_ELEMENTS {
-			let value = Node::Simple(NoOp(i));
-			let _id = graph.add_node(value);
+			let _id = nodes.add_simple(NoOp(i));
 		}
 
-		graph
+		nodes
 	}
 
 	let mut group = c.benchmark_group("Bulk");
@@ -115,8 +110,8 @@ fn bench_iteration(c: &mut Criterion) {
 	group.bench_function("Node", |b| {
 		b.iter_batched_ref(
 			setup,
-			|graph| {
-				for node in &graph.nodes {
+			|nodes| {
+				for node in nodes.iter() {
 					black_box(node);
 				}
 			},
@@ -125,7 +120,7 @@ fn bench_iteration(c: &mut Criterion) {
 	});
 
 	group.bench_function("Clear", |b| {
-		b.iter_batched_ref(setup, Graph::clear, BatchSize::LargeInput);
+		b.iter_batched_ref(setup, |nodes| nodes.clear(), BatchSize::LargeInput);
 	});
 }
 

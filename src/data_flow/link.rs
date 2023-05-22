@@ -1,89 +1,60 @@
-use std::num::TryFromIntError;
+use std::{iter::Map, ops::RangeInclusive};
 
-use super::node::Id;
+#[cfg(debug_assertions)]
+pub type Id = arena::key::Id<std::num::NonZeroU32>;
 
-/// An index of a port to either an input or output.
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Port {
-	index: u16,
+#[cfg(not(debug_assertions))]
+pub type Id = arena::key::Id<arena::version::Nil>;
+
+/// A region with a start and an end marker that delimit it.
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Region {
+	start: Id,
+	end: Id,
 }
 
-impl Port {
-	/// Creates a new [`Port`] from an index.
+impl Region {
+	pub(crate) const fn new(start: Id, end: Id) -> Self {
+		Self { start, end }
+	}
+
+	/// Returns the start marker [`Id`] of the region.
 	#[inline]
 	#[must_use]
-	pub const fn new(index: u16) -> Self {
-		Self { index }
+	pub const fn start(self) -> Id {
+		self.start
 	}
 
-	/// Returns the index of the [`Port`].
+	/// Returns the end marker [`Id`] of the region.
 	#[inline]
 	#[must_use]
-	pub const fn index(self) -> u16 {
-		self.index
-	}
-
-	/// Returns an iterator over all [`Port`]s starting from the current one.
-	pub fn iter(self) -> impl Iterator<Item = Self> {
-		(self.index..).map(Self::new)
+	pub const fn end(self) -> Id {
+		self.end
 	}
 }
 
-impl From<Port> for usize {
-	#[inline]
-	fn from(port: Port) -> Self {
-		port.index.into()
-	}
-}
-
-impl TryFrom<usize> for Port {
-	type Error = TryFromIntError;
-
-	#[inline]
-	fn try_from(value: usize) -> Result<Self, Self::Error> {
-		u16::try_from(value).map(|index| Self { index })
-	}
-}
-
-/// A relationship between an [`Id`] and a [`Port`]. Two of these together
+/// A relationship between an [`Id`] and a [`u16`] port. Two of these together
 /// represent a connection between two nodes.
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Link {
-	node: Id,
-	port: Port,
+	pub node: Id,
+	pub port: u16,
 }
 
 impl Link {
-	/// Creates a new [`Link`] from an [`Id`] and a [`Port`].
-	#[inline]
-	#[must_use]
-	pub const fn new(node: Id, port: Port) -> Self {
-		Self { node, port }
-	}
-
-	/// Returns the [`Id`] of the [`Link`].
-	#[inline]
-	#[must_use]
-	pub const fn node(self) -> Id {
-		self.node
-	}
-
-	/// Returns the [`Port`] of the [`Link`].
-	#[inline]
-	#[must_use]
-	pub const fn port(self) -> Port {
-		self.port
-	}
-
 	/// Returns an iterator over all [`Link`]s starting from the current one.
-	pub fn iter(self) -> impl Iterator<Item = Self> {
-		self.port.iter().map(move |p| Self::new(self.node, p))
+	#[inline]
+	pub fn iter(self) -> Map<RangeInclusive<u16>, impl FnMut(u16) -> Self> {
+		let node = self.node;
+		let iter = self.port..=u16::MAX;
+
+		iter.map(move |port| Self { node, port })
 	}
 }
 
 impl From<Id> for Link {
 	#[inline]
 	fn from(node: Id) -> Self {
-		Self::new(node, Port::default())
+		Self { node, port: 0 }
 	}
 }
