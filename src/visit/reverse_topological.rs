@@ -1,18 +1,13 @@
 use crate::data_flow::{
-	graph::{Graph, PredecessorList},
-	node::{Id, Region},
+	link::{Id, Region},
+	node::{Node, Parameters},
+	nodes::Nodes,
 };
 
 enum Entry {
 	Predecessors { id: Id, count: usize },
 	Regions { id: Id, count: usize },
 	Node { id: Id },
-}
-
-fn region_count_checked<S>(graph: &Graph<S>, id: Id) -> usize {
-	graph.nodes[id]
-		.as_compound()
-		.map_or(0, |_| graph.regions[&id].len())
 }
 
 /// A reverse topological traversal of the graph.
@@ -39,140 +34,175 @@ impl ReverseTopological {
 		&self.seen
 	}
 
-	fn add_node_by_id(&mut self, predecessors: &[PredecessorList], id: Id) {
+	fn add_node<S: Parameters>(&mut self, nodes: &Nodes<S>, id: Id) {
 		if self.seen[id] {
 			return;
 		}
 
-		let count = predecessors[id].len();
+		let count = nodes[id].parameters().len();
 
 		self.seen[id] = true;
 		self.stack.push(Entry::Predecessors { id, count });
 	}
 
-	fn add_region(&mut self, predecessors: &[PredecessorList], region: Region) {
-		self.add_node_by_id(predecessors, region.end());
-		self.add_node_by_id(predecessors, region.start());
+	fn add_region<S: Parameters>(&mut self, nodes: &Nodes<S>, region: Region) {
+		self.add_node(nodes, region.end());
+		self.add_node(nodes, region.start());
 	}
 
-	fn handle_predecessor<S>(&mut self, graph: &Graph<S>, count: usize, id: Id) {
+	fn handle_predecessor<S: Parameters>(&mut self, nodes: &Nodes<S>, count: usize, id: Id) {
+		let node = &nodes[id];
+
 		if let Some(count) = count.checked_sub(1) {
 			self.stack.push(Entry::Predecessors { id, count });
 
-			let predecessors = &graph.predecessors[id];
-			let predecessor = predecessors[predecessors.len() - count - 1];
+			let parameter = node.parameters().nth_back(count).unwrap();
 
-			self.add_node_by_id(&graph.predecessors, predecessor.node());
-		} else {
-			let count = region_count_checked(graph, id);
+			self.add_node(nodes, parameter.node);
+		} else if let Node::Compound(compound) = node {
+			let count = compound.regions().len();
 
-			self.handle_region(graph, count, id);
-		}
-	}
-
-	fn handle_region<S>(&mut self, graph: &Graph<S>, count: usize, id: Id) {
-		if let Some(count) = count.checked_sub(1) {
-			self.stack.push(Entry::Regions { id, count });
-
-			let regions = &graph.regions[&id];
-			let region = regions[regions.len() - count - 1];
-
-			self.add_region(&graph.predecessors, region);
+			self.handle_region(nodes, count, id);
 		} else {
 			self.stack.push(Entry::Node { id });
 		}
 	}
 
-	fn set_up_roots<I>(&mut self, predecessors: &[PredecessorList], active: usize, roots: I)
+	fn handle_region<S: Parameters>(&mut self, nodes: &Nodes<S>, count: usize, id: Id) {
+		if let Some(count) = count.checked_sub(1) {
+			self.stack.push(Entry::Regions { id, count });
+
+			let compound = &nodes[id].as_compound().unwrap();
+			let region = *compound.regions().iter().nth_back(count).unwrap();
+
+			self.add_region(nodes, region);
+		} else {
+			self.stack.push(Entry::Node { id });
+		}
+	}
+
+	#[inline]
+	fn next_in<S: Parameters>(&mut self, nodes: &Nodes<S>) -> Option<Id> {
+		loop {
+			match self.stack.pop()? {
+				Entry::Predecessors { id, count } => self.handle_predecessor(nodes, count, id),
+				Entry::Regions { id, count } => self.handle_region(nodes, count, id),
+				Entry::Node { id } => return Some(id),
+			}
+		}
+	}
+
+	fn set_up_roots<S, I>(&mut self, nodes: &Nodes<S>, roots: I)
 	where
+		S: Parameters,
 		I: IntoIterator<Item = Id>,
 	{
 		self.seen.clear();
-		self.seen.resize(active, false);
+		self.seen.resize(nodes.active(), false);
+
+		self.stack.clear();
 
 		for id in roots {
-			self.add_node_by_id(predecessors, id);
+			self.add_node(nodes, id);
 		}
 
 		self.stack.reverse();
 	}
 
-	/// Traverses the graph and logs every seen node.
-	pub fn run<S, I>(&mut self, graph: &Graph<S>, roots: I)
+	/// Returns an iterator over the nodes in reverse topological order.
+	#[inline]
+	#[must_use]
+	pub fn iter<'a, 'b, S, I>(&'a mut self, nodes: &'b Nodes<S>, roots: I) -> Iter<'a, 'b, S>
 	where
+		S: Parameters,
 		I: IntoIterator<Item = Id>,
 	{
-		self.run_with(graph, roots, |_, _| {});
-	}
+		let topological = self;
 
-	/// Traverses the graph, applying the `function` on every node.
-	pub fn run_with<S, I, F>(&mut self, graph: &Graph<S>, roots: I, mut function: F)
-	where
-		I: IntoIterator<Item = Id>,
-		F: FnMut(&Graph<S>, Id),
-	{
-		self.set_up_roots(&graph.predecessors, graph.active(), roots);
+		topological.set_up_roots(nodes, roots);
 
-		while let Some(entry) = self.stack.pop() {
-			match entry {
-				Entry::Predecessors { id, count } => self.handle_predecessor(graph, count, id),
-				Entry::Regions { id, count } => self.handle_region(graph, count, id),
-				Entry::Node { id } => function(graph, id),
-			}
-		}
-	}
-
-	/// Traverses the graph, applying the `function` on every node.
-	/// The `function` is allowed to modify the graph.
-	pub fn run_with_mut<S, I, F>(&mut self, graph: &mut Graph<S>, roots: I, mut function: F)
-	where
-		I: IntoIterator<Item = Id>,
-		F: FnMut(&mut Graph<S>, Id),
-	{
-		self.set_up_roots(&graph.predecessors, graph.active(), roots);
-
-		while let Some(entry) = self.stack.pop() {
-			match entry {
-				Entry::Predecessors { id, count } => self.handle_predecessor(graph, count, id),
-				Entry::Regions { id, count } => self.handle_region(graph, count, id),
-				Entry::Node { id } => function(graph, id),
-			}
-		}
+		Iter { topological, nodes }
 	}
 }
 
+/// An iterator over the nodes in reverse topological order.
+pub struct Iter<'a, 'b, S> {
+	topological: &'a mut ReverseTopological,
+	nodes: &'b Nodes<S>,
+}
+
+impl<'a, 'b, S: Parameters> Iterator for Iter<'a, 'b, S> {
+	type Item = Id;
+
+	#[inline]
+	fn next(&mut self) -> Option<Self::Item> {
+		self.topological.next_in(self.nodes)
+	}
+}
+
+impl<'a, 'b, S: Parameters> std::iter::FusedIterator for Iter<'a, 'b, S> {}
+
 #[cfg(test)]
 mod tests {
-	use crate::data_flow::{graph::Graph, node::Node};
+	use crate::data_flow::{
+		link::Link,
+		node::{AsParametersMut, Parameters},
+		nodes::Nodes,
+	};
 
 	use super::ReverseTopological;
 
+	enum Simple {
+		Leaf,
+		Ref(Link),
+	}
+
+	impl Parameters for Simple {
+		type Iter<'a> = std::option::IntoIter<&'a Link>;
+
+		fn parameters(&self) -> Self::Iter<'_> {
+			let parameters = match self {
+				Self::Leaf => None,
+				Self::Ref(link) => Some(link),
+			};
+
+			parameters.into_iter()
+		}
+	}
+
+	impl AsParametersMut for Simple {
+		fn as_parameters_mut(&mut self) -> Option<&mut Vec<Link>> {
+			None
+		}
+	}
+
 	#[test]
 	fn test_is_in_order() {
-		let mut graph = Graph::new();
+		let mut nodes = Nodes::new();
 
-		let region_1 = graph.add_region();
-		let value_1 = graph.add_node(Node::Simple(()));
-		let value_2 = graph.add_node(Node::Simple(()));
+		let region_1 = nodes.add_region();
+		let value_1 = nodes.add_simple(Simple::Ref(region_1.start().into()));
+		let value_2 = nodes.add_simple(Simple::Ref(value_1.into()));
 
-		graph.predecessors[value_1].push(region_1.start().into());
-		graph.predecessors[value_2].push(value_1.into());
-		graph.predecessors[region_1.end()].push(value_2.into());
+		nodes[region_1.end()]
+			.as_parameters_mut()
+			.unwrap()
+			.push(value_2.into());
 
-		let region_2 = graph.add_region();
-		let value_3 = graph.add_node(Node::Simple(()));
-		let value_4 = graph.add_node(Node::Simple(()));
+		let region_2 = nodes.add_region();
+		let value_3 = nodes.add_simple(Simple::Ref(region_2.start().into()));
+		let value_4 = nodes.add_simple(Simple::Ref(region_2.start().into()));
 
-		graph.predecessors[value_3].push(region_2.start().into());
-		graph.predecessors[value_4].push(region_2.start().into());
-		graph.predecessors[region_2.end()].push(value_3.into());
-		graph.predecessors[region_2.end()].push(value_4.into());
+		nodes[region_2.end()]
+			.as_parameters_mut()
+			.unwrap()
+			.extend([Link::from(value_3), Link::from(value_4)]);
 
-		let value_5 = graph.add_node(Node::Simple(()));
-		let gamma = graph.add_gamma([region_1, region_2].into());
+		let value_5 = nodes.add_simple(Simple::Leaf);
+		let gamma = nodes.add_gamma([region_1, region_2].into());
 
 		let mut counter = 0;
-		let mut expected = vec![0; graph.active()];
+		let mut expected = vec![0; nodes.active()];
 
 		expected[region_1.start()] = 1;
 		expected[value_1] = 2;
@@ -187,10 +217,10 @@ mod tests {
 		expected[gamma] = 9;
 		expected[value_5] = 10;
 
-		ReverseTopological::new().run_with(&graph, [gamma, value_5], |_, id| {
+		for id in ReverseTopological::new().iter(&nodes, [gamma, value_5]) {
 			counter += 1;
 
 			assert_eq!(expected[id], counter, "Node {id} was not in order");
-		});
+		}
 	}
 }

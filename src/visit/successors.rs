@@ -1,6 +1,6 @@
 use tinyvec::TinyVec;
 
-use crate::data_flow::{graph::Graph, node::Id};
+use crate::data_flow::{link::Id, node::Parameters, nodes::Nodes};
 
 use super::reverse_topological::ReverseTopological;
 
@@ -32,11 +32,12 @@ impl Successors {
 	}
 
 	/// Finds and caches all successors coming back from the roots.
-	pub fn run<S, I>(&mut self, graph: &Graph<S>, roots: I, topological: &mut ReverseTopological)
+	pub fn run<S, I>(&mut self, nodes: &Nodes<S>, roots: I, topological: &mut ReverseTopological)
 	where
+		S: Parameters,
 		I: IntoIterator<Item = Id>,
 	{
-		let active = graph.active();
+		let active = nodes.active();
 
 		self.cache.iter_mut().for_each(SuccessorList::clear);
 
@@ -44,14 +45,14 @@ impl Successors {
 			self.cache.resize_with(active, SuccessorList::new);
 		}
 
-		topological.run_with(graph, roots, |graph, id| {
-			for predecessor in &graph.predecessors[id] {
-				let successors = &mut self.cache[predecessor.node()];
+		for id in topological.iter(nodes, roots) {
+			for predecessor in nodes[id].parameters() {
+				let successors = &mut self.cache[predecessor.node];
 
 				if !successors.contains(&id) {
 					successors.push(id);
 				}
 			}
-		});
+		}
 	}
 }
