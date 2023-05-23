@@ -26,6 +26,135 @@ fn region_of<S>(node: &Node<S>) -> Option<Region> {
 	})
 }
 
+fn write_simple<S>(
+	ports: &[PortCounts],
+	w: &mut dyn Write,
+	nodes: &Nodes<S>,
+	id: Id,
+	place: Id,
+) -> Result<()>
+where
+	S: Parameters + Description,
+{
+	write!(w, "{id} ")?;
+	ports[id].write(w, &nodes[id])?;
+	nodes.write_links_in_place(w, id, place)
+}
+
+fn write_marker_start(compounds: &HashMap<Id, Id>, w: &mut dyn Write, id: Id) -> Result<()> {
+	if let Some(&parent) = compounds.get(&id) {
+		writeln!(w, "subgraph cluster_{parent} {{")?;
+	}
+
+	writeln!(w, "subgraph cluster_{id} {{")
+}
+
+fn write_marker_end(compounds: &HashMap<Id, Id>, w: &mut dyn Write, id: Id) -> Result<()> {
+	writeln!(w, "}}")?;
+
+	if let Some(parent) = compounds.get(&id) {
+		writeln!(w, "}} // {parent}")?;
+	}
+
+	Ok(())
+}
+
+fn write_gamma<S>(
+	ports: &[PortCounts],
+	w: &mut dyn Write,
+	nodes: &Nodes<S>,
+	regions: &[Region],
+) -> Result<()>
+where
+	S: Parameters + Description,
+{
+	for (i, region) in regions.iter().enumerate() {
+		let start = region.start();
+		let end = region.end();
+
+		writeln!(w, "subgraph cluster_{start} {{")?;
+		writeln!(w, r#"label = "{i}";"#)?;
+
+		write_simple(ports, w, nodes, start, start)?;
+		write_simple(ports, w, nodes, end, end)?;
+
+		writeln!(w, "}}")?;
+	}
+
+	Ok(())
+}
+
+fn write_compound<S>(
+	ports: &[PortCounts],
+	w: &mut dyn Write,
+	nodes: &Nodes<S>,
+	id: Id,
+	compound: &Compound,
+) -> Result<()>
+where
+	S: Parameters + Description,
+{
+	writeln!(w, "subgraph cluster_{id} {{")?;
+
+	Group::from(compound).write(w)?;
+
+	match compound {
+		Compound::Gamma { regions, .. } => {
+			write_simple(ports, w, nodes, id, id)?;
+			write_gamma(ports, w, nodes, regions)?;
+		}
+		Compound::Theta { region, .. }
+		| Compound::Lambda { region, .. }
+		| Compound::Phi { region, .. } => {
+			write_simple(ports, w, nodes, region.start(), id)?;
+			write_simple(ports, w, nodes, region.end(), region.end())?;
+		}
+	}
+
+	writeln!(w, "}}")
+}
+
+fn write_insiders<S, I>(
+	topological: &mut ReverseTopological,
+	ports: &[PortCounts],
+	compounds: &HashMap<Id, Id>,
+	w: &mut dyn Write,
+	nodes: &Nodes<S>,
+	roots: I,
+) -> Result<()>
+where
+	S: Parameters + Description,
+	I: IntoIterator<Item = Id>,
+{
+	for id in topological.iter(nodes, roots) {
+		match &nodes[id] {
+			Node::Simple(..) => write_simple(ports, w, nodes, id, id)?,
+			Node::Marker(Marker::Start) => write_marker_start(compounds, w, id)?,
+			Node::Marker(Marker::End { .. }) => write_marker_end(compounds, w, id)?,
+			Node::Compound(compound) => write_compound(ports, w, nodes, id, compound)?,
+		}
+	}
+
+	Ok(())
+}
+
+fn write_outsiders<S>(
+	topological: &ReverseTopological,
+	ports: &[PortCounts],
+	w: &mut dyn Write,
+	nodes: &Nodes<S>,
+) -> Result<()>
+where
+	S: Parameters + Description,
+{
+	let seen = topological.seen();
+
+	nodes
+		.keys()
+		.filter(|&id| !seen[id])
+		.try_for_each(|id| write_simple(ports, w, nodes, id, id))
+}
+
 trait Extension<S> {
 	fn region_start_of(&self, id: Id) -> Id;
 
@@ -102,116 +231,6 @@ impl Dot {
 		}
 	}
 
-	fn write_simple<S>(&self, w: &mut dyn Write, nodes: &Nodes<S>, id: Id, place: Id) -> Result<()>
-	where
-		S: Parameters + Description,
-	{
-		write!(w, "{id} ")?;
-		self.ports[id].write(w, &nodes[id])?;
-		nodes.write_links_in_place(w, id, place)
-	}
-
-	fn write_marker_start(&self, w: &mut dyn Write, id: Id) -> Result<()> {
-		if let Some(&parent) = self.compounds.get(&id) {
-			writeln!(w, "subgraph cluster_{parent} {{")?;
-		}
-
-		writeln!(w, "subgraph cluster_{id} {{")
-	}
-
-	fn write_marker_end(&self, w: &mut dyn Write, id: Id) -> Result<()> {
-		writeln!(w, "}}")?;
-
-		if let Some(parent) = self.compounds.get(&id) {
-			writeln!(w, "}} // {parent}")?;
-		}
-
-		Ok(())
-	}
-
-	fn write_gamma<S>(&self, w: &mut dyn Write, nodes: &Nodes<S>, regions: &[Region]) -> Result<()>
-	where
-		S: Parameters + Description,
-	{
-		for (i, region) in regions.iter().enumerate() {
-			let start = region.start();
-			let end = region.end();
-
-			writeln!(w, "subgraph cluster_{start} {{")?;
-			writeln!(w, r#"label = "{i}";"#)?;
-
-			self.write_simple(w, nodes, start, start)?;
-			self.write_simple(w, nodes, end, end)?;
-
-			writeln!(w, "}}")?;
-		}
-
-		Ok(())
-	}
-
-	fn write_compound<S>(
-		&self,
-		w: &mut dyn Write,
-		nodes: &Nodes<S>,
-		id: Id,
-		compound: &Compound,
-	) -> Result<()>
-	where
-		S: Parameters + Description,
-	{
-		writeln!(w, "subgraph cluster_{id} {{")?;
-
-		Group::from(compound).write(w)?;
-
-		match compound {
-			Compound::Gamma { regions, .. } => {
-				self.write_simple(w, nodes, id, id)?;
-				self.write_gamma(w, nodes, regions)?;
-			}
-			Compound::Theta { region, .. }
-			| Compound::Lambda { region, .. }
-			| Compound::Phi { region, .. } => {
-				self.write_simple(w, nodes, region.start(), id)?;
-				self.write_simple(w, nodes, region.end(), region.end())?;
-			}
-		}
-
-		writeln!(w, "}}")
-	}
-
-	fn write_insiders<S, I>(&mut self, w: &mut dyn Write, nodes: &Nodes<S>, roots: I) -> Result<()>
-	where
-		S: Parameters + Description,
-		I: IntoIterator<Item = Id>,
-	{
-		let mut topological = std::mem::take(&mut self.topological);
-
-		for id in topological.iter(nodes, roots) {
-			match &nodes[id] {
-				Node::Simple(..) => self.write_simple(w, nodes, id, id)?,
-				Node::Marker(Marker::Start) => self.write_marker_start(w, id)?,
-				Node::Marker(Marker::End { .. }) => self.write_marker_end(w, id)?,
-				Node::Compound(compound) => self.write_compound(w, nodes, id, compound)?,
-			}
-		}
-
-		self.topological = topological;
-
-		Ok(())
-	}
-
-	fn write_outsiders<S>(&self, w: &mut dyn Write, nodes: &Nodes<S>) -> Result<()>
-	where
-		S: Parameters + Description,
-	{
-		let seen = self.topological.seen();
-
-		nodes
-			.keys()
-			.filter(|&id| !seen[id])
-			.try_for_each(|id| self.write_simple(w, nodes, id, id))
-	}
-
 	/// # Errors
 	///
 	/// Returns an error if the writer fails to write.
@@ -227,8 +246,15 @@ impl Dot {
 		writeln!(writer, "style = filled;")?;
 
 		self.initialize(nodes);
-		self.write_insiders(writer, nodes, roots)?;
-		self.write_outsiders(writer, nodes)?;
+		write_insiders(
+			&mut self.topological,
+			&self.ports,
+			&self.compounds,
+			writer,
+			nodes,
+			roots,
+		)?;
+		write_outsiders(&self.topological, &self.ports, writer, nodes)?;
 
 		writeln!(writer, "}}")
 	}
