@@ -250,17 +250,17 @@ impl Compound {
 
 /// A node in the data flow graph.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Node<S> {
-	Simple(S),
+pub enum Node<N> {
+	Simple(N),
 	Marker(Marker),
 	Compound(Compound),
 }
 
-impl<S> Node<S> {
+impl<N> Node<N> {
 	/// Returns a reference to the [`Node::Simple`] node if it is one.
 	#[inline]
 	#[must_use]
-	pub const fn as_simple(&self) -> Option<&S> {
+	pub const fn as_simple(&self) -> Option<&N> {
 		if let Self::Simple(simple) = self {
 			Some(simple)
 		} else {
@@ -298,7 +298,7 @@ pub trait AsParameters {
 	fn as_parameters(&self) -> Option<&[Link]>;
 }
 
-impl<S: AsParameters> AsParameters for Node<S> {
+impl<N: AsParameters> AsParameters for Node<N> {
 	#[inline]
 	fn as_parameters(&self) -> Option<&[Link]> {
 		match self {
@@ -317,7 +317,7 @@ pub trait AsParametersMut {
 	fn as_parameters_mut(&mut self) -> Option<&mut Vec<Link>>;
 }
 
-impl<S: AsParametersMut> AsParametersMut for Node<S> {
+impl<N: AsParametersMut> AsParametersMut for Node<N> {
 	#[inline]
 	fn as_parameters_mut(&mut self) -> Option<&mut Vec<Link>> {
 		match self {
@@ -340,8 +340,8 @@ pub trait Parameters {
 	fn parameters(&self) -> Self::Iter<'_>;
 }
 
-impl<S: Parameters> Parameters for Node<S> {
-	type Iter<'a> = Iter<'a, S::Iter<'a>> where S: 'a;
+impl<N: Parameters> Parameters for Node<N> {
+	type Iter<'a> = Iter<'a, N::Iter<'a>> where N: 'a;
 
 	#[inline]
 	fn parameters(&self) -> Self::Iter<'_> {
@@ -367,8 +367,8 @@ pub trait ParametersMut {
 	fn parameters_mut(&mut self) -> Self::Iter<'_>;
 }
 
-impl<S: ParametersMut> ParametersMut for Node<S> {
-	type Iter<'a> = IterMut<'a, S::Iter<'a>> where S: 'a;
+impl<N: ParametersMut> ParametersMut for Node<N> {
+	type Iter<'a> = IterMut<'a, N::Iter<'a>> where N: 'a;
 
 	#[inline]
 	fn parameters_mut(&mut self) -> Self::Iter<'_> {
@@ -383,13 +383,13 @@ impl<S: ParametersMut> ParametersMut for Node<S> {
 	}
 }
 
-impl<S> From<Marker> for Node<S> {
+impl<N> From<Marker> for Node<N> {
 	fn from(marker: Marker) -> Self {
 		Self::Marker(marker)
 	}
 }
 
-impl<S> From<Compound> for Node<S> {
+impl<N> From<Compound> for Node<N> {
 	fn from(compound: Compound) -> Self {
 		Self::Compound(compound)
 	}

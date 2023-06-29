@@ -32,9 +32,9 @@ impl Successors {
 	}
 
 	/// Finds and caches all successors coming back from the roots.
-	pub fn run<S, I>(&mut self, nodes: &Nodes<S>, roots: I, topological: &mut ReverseTopological)
+	pub fn run<N, I>(&mut self, nodes: &Nodes<N>, roots: I, topological: &mut ReverseTopological)
 	where
-		S: Parameters,
+		N: Parameters,
 		I: IntoIterator<Item = Id>,
 	{
 		let active = nodes.active();

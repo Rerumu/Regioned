@@ -9,9 +9,9 @@ use crate::{
 
 /// Redoes the ports of the successors of the node `id` to point elsewhere.
 /// The ports are updated using the function `redo`.
-pub fn redo_ports<S, F>(nodes: &mut Nodes<S>, successors: &Successors, id: Id, redo: F) -> usize
+pub fn redo_ports<N, F>(nodes: &mut Nodes<N>, successors: &Successors, id: Id, redo: F) -> usize
 where
-	S: ParametersMut,
+	N: ParametersMut,
 	F: Fn(u16) -> Option<Link>,
 {
 	let mut applied = 0;
@@ -32,14 +32,14 @@ where
 }
 
 /// Redoes the ports of the successors of the node `from` to point to the node `to`.
-pub fn redo_ports_in_place<S>(
-	nodes: &mut Nodes<S>,
+pub fn redo_ports_in_place<N>(
+	nodes: &mut Nodes<N>,
 	successors: &Successors,
 	from: Id,
 	to: Id,
 ) -> usize
 where
-	S: ParametersMut,
+	N: ParametersMut,
 {
 	redo_ports(nodes, successors, from, |port| {
 		Some(Link { node: to, port })
@@ -48,13 +48,13 @@ where
 
 /// Applies the `rule` to the graph nodes. If the rule succeeds,
 /// the result is passed to `stitch`, the node is updated, and the old node is returned.
-pub const fn single<A, B, S, U>(
+pub const fn single<A, B, N, U>(
 	mut rule: A,
 	mut stitch: B,
-) -> impl FnMut(&mut Nodes<S>, Id) -> Option<Node<S>>
+) -> impl FnMut(&mut Nodes<N>, Id) -> Option<Node<N>>
 where
-	A: FnMut(&mut Nodes<S>, Id) -> Option<U>,
-	B: FnMut(&mut Nodes<S>, Id, U) -> Node<S>,
+	A: FnMut(&mut Nodes<N>, Id) -> Option<U>,
+	B: FnMut(&mut Nodes<N>, Id, U) -> Node<N>,
 {
 	move |nodes, id| {
 		rule(nodes, id).map(|result| {

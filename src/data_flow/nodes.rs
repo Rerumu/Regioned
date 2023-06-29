@@ -12,11 +12,11 @@ use super::{
 ///
 /// It is an acyclic graph that represents the data flow of a program.
 #[derive(Clone, Debug)]
-pub struct Nodes<S> {
-	nodes: Arena<Id, Node<S>>,
+pub struct Nodes<N> {
+	nodes: Arena<Id, Node<N>>,
 }
 
-impl<S> Nodes<S> {
+impl<N> Nodes<N> {
 	/// Creates a new, empty [`Nodes`].
 	#[inline]
 	#[must_use]
@@ -45,7 +45,7 @@ impl<S> Nodes<S> {
 	/// Adds a [`Node::Simple`] node to the graph and returns its [`Id`].
 	#[inline]
 	#[must_use]
-	pub fn add_simple(&mut self, simple: S) -> Id {
+	pub fn add_simple(&mut self, simple: N) -> Id {
 		self.nodes.insert(Node::Simple(simple))
 	}
 
@@ -113,7 +113,7 @@ impl<S> Nodes<S> {
 	}
 }
 
-impl<S> Default for Nodes<S> {
+impl<N> Default for Nodes<N> {
 	#[inline]
 	#[must_use]
 	fn default() -> Self {
@@ -121,8 +121,8 @@ impl<S> Default for Nodes<S> {
 	}
 }
 
-impl<S> Deref for Nodes<S> {
-	type Target = Arena<Id, Node<S>>;
+impl<N> Deref for Nodes<N> {
+	type Target = Arena<Id, Node<N>>;
 
 	#[inline]
 	#[must_use]
@@ -131,7 +131,7 @@ impl<S> Deref for Nodes<S> {
 	}
 }
 
-impl<S> DerefMut for Nodes<S> {
+impl<N> DerefMut for Nodes<N> {
 	#[inline]
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.nodes

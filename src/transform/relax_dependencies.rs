@@ -29,9 +29,9 @@ impl RelaxDependencies {
 		Self { maps: Vec::new() }
 	}
 
-	fn add_map_results<S>(&mut self, nodes: &Nodes<S>, parameters: &[Link], region: Region)
+	fn add_map_results<N>(&mut self, nodes: &Nodes<N>, parameters: &[Link], region: Region)
 	where
-		S: Parameters,
+		N: Parameters,
 	{
 		let iter = nodes[region.end()]
 			.parameters()
@@ -41,9 +41,9 @@ impl RelaxDependencies {
 		self.maps.extend(iter);
 	}
 
-	fn run_gamma<S>(&mut self, nodes: &Nodes<S>, parameters: &[Link], regions: &[Region])
+	fn run_gamma<N>(&mut self, nodes: &Nodes<N>, parameters: &[Link], regions: &[Region])
 	where
-		S: Parameters,
+		N: Parameters,
 	{
 		let mut regions = regions.iter();
 		let region = *regions.next().expect("`Gamma` has no region");
@@ -61,9 +61,9 @@ impl RelaxDependencies {
 		}
 	}
 
-	fn run_theta<S>(&mut self, nodes: &Nodes<S>, parameters: &[Link], region: Region)
+	fn run_theta<N>(&mut self, nodes: &Nodes<N>, parameters: &[Link], region: Region)
 	where
-		S: Parameters,
+		N: Parameters,
 	{
 		// This will technically include the `Theta` condition, but
 		// it won't be used anyway as it's not output.
@@ -79,9 +79,9 @@ impl RelaxDependencies {
 		}
 	}
 
-	pub fn run<S>(&mut self, nodes: &mut Nodes<S>, id: Id, successors: &Successors) -> Option<usize>
+	pub fn run<N>(&mut self, nodes: &mut Nodes<N>, id: Id, successors: &Successors) -> Option<usize>
 	where
-		S: Parameters + ParametersMut,
+		N: Parameters + ParametersMut,
 	{
 		let compound = nodes[id].as_compound()?;
 

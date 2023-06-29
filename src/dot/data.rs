@@ -17,7 +17,7 @@ use super::{
 	template::{Anchor, Group, PortCounts},
 };
 
-fn region_of<S>(node: &Node<S>) -> Option<Region> {
+fn region_of<N>(node: &Node<N>) -> Option<Region> {
 	node.as_compound().and_then(|compound| match *compound {
 		Compound::Gamma { .. } => None,
 		Compound::Theta { region, .. }
@@ -26,7 +26,7 @@ fn region_of<S>(node: &Node<S>) -> Option<Region> {
 	})
 }
 
-trait Extension<S> {
+trait Extension<N> {
 	fn region_start_of(&self, id: Id) -> Id;
 
 	fn region_end_of(&self, id: Id) -> Id;
@@ -41,7 +41,7 @@ trait Extension<S> {
 	fn write_links_in_place(&self, w: &mut dyn Write, to: Id, from: Id) -> Result<()>;
 }
 
-impl<S: Parameters> Extension<S> for Nodes<S> {
+impl<N: Parameters> Extension<N> for Nodes<N> {
 	fn region_start_of(&self, id: Id) -> Id {
 		region_of(&self[id]).map_or(id, Region::start)
 	}
@@ -75,7 +75,7 @@ impl Dot {
 		Self::default()
 	}
 
-	fn initialize<S: Parameters>(&mut self, nodes: &Nodes<S>) {
+	fn initialize<N: Parameters>(&mut self, nodes: &Nodes<N>) {
 		self.ports.clear();
 		self.ports.resize_with(nodes.active(), Default::default);
 
@@ -102,9 +102,9 @@ impl Dot {
 		}
 	}
 
-	fn write_simple<S>(&self, w: &mut dyn Write, nodes: &Nodes<S>, id: Id, place: Id) -> Result<()>
+	fn write_simple<N>(&self, w: &mut dyn Write, nodes: &Nodes<N>, id: Id, place: Id) -> Result<()>
 	where
-		S: Parameters + Description,
+		N: Parameters + Description,
 	{
 		write!(w, "{id} ")?;
 		self.ports[id].write(w, &nodes[id])?;
@@ -129,9 +129,9 @@ impl Dot {
 		Ok(())
 	}
 
-	fn write_gamma<S>(&self, w: &mut dyn Write, nodes: &Nodes<S>, regions: &[Region]) -> Result<()>
+	fn write_gamma<N>(&self, w: &mut dyn Write, nodes: &Nodes<N>, regions: &[Region]) -> Result<()>
 	where
-		S: Parameters + Description,
+		N: Parameters + Description,
 	{
 		for (i, region) in regions.iter().enumerate() {
 			let start = region.start();
@@ -149,15 +149,15 @@ impl Dot {
 		Ok(())
 	}
 
-	fn write_compound<S>(
+	fn write_compound<N>(
 		&self,
 		w: &mut dyn Write,
-		nodes: &Nodes<S>,
+		nodes: &Nodes<N>,
 		id: Id,
 		compound: &Compound,
 	) -> Result<()>
 	where
-		S: Parameters + Description,
+		N: Parameters + Description,
 	{
 		writeln!(w, "subgraph cluster_{id} {{")?;
 
@@ -179,9 +179,9 @@ impl Dot {
 		writeln!(w, "}}")
 	}
 
-	fn write_insiders<S, I>(&mut self, w: &mut dyn Write, nodes: &Nodes<S>, roots: I) -> Result<()>
+	fn write_insiders<N, I>(&mut self, w: &mut dyn Write, nodes: &Nodes<N>, roots: I) -> Result<()>
 	where
-		S: Parameters + Description,
+		N: Parameters + Description,
 		I: IntoIterator<Item = Id>,
 	{
 		let mut topological = std::mem::take(&mut self.topological);
@@ -200,9 +200,9 @@ impl Dot {
 		Ok(())
 	}
 
-	fn write_outsiders<S>(&self, w: &mut dyn Write, nodes: &Nodes<S>) -> Result<()>
+	fn write_outsiders<N>(&self, w: &mut dyn Write, nodes: &Nodes<N>) -> Result<()>
 	where
-		S: Parameters + Description,
+		N: Parameters + Description,
 	{
 		let seen = self.topological.seen();
 
@@ -215,9 +215,9 @@ impl Dot {
 	/// # Errors
 	///
 	/// Returns an error if the writer fails to write.
-	pub fn write<S, I>(&mut self, writer: &mut dyn Write, nodes: &Nodes<S>, roots: I) -> Result<()>
+	pub fn write<N, I>(&mut self, writer: &mut dyn Write, nodes: &Nodes<N>, roots: I) -> Result<()>
 	where
-		S: Parameters + Description,
+		N: Parameters + Description,
 		I: IntoIterator<Item = Id>,
 	{
 		const NODE_ATTRIBUTES: &str = r##"shape = plain, style = filled, fillcolor = "#DDDDFF""##;

@@ -4,9 +4,9 @@ use crate::{
 };
 
 /// Marks all reachable nodes from the given roots, then removes all unmarked nodes.
-pub fn run<S, I>(nodes: &mut Nodes<S>, roots: I, topological: &mut ReverseTopological)
+pub fn run<N, I>(nodes: &mut Nodes<N>, roots: I, topological: &mut ReverseTopological)
 where
-	S: Parameters,
+	N: Parameters,
 	I: IntoIterator<Item = Id>,
 {
 	topological.iter(nodes, roots).for_each(drop);

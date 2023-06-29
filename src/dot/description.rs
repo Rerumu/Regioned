@@ -50,7 +50,7 @@ impl Description for Compound {
 	}
 }
 
-impl<S: Description> Description for Node<S> {
+impl<N: Description> Description for Node<N> {
 	fn write_content(&self, writer: &mut dyn Write) -> Result<()> {
 		match self {
 			Self::Simple(simple) => simple.write_content(writer),

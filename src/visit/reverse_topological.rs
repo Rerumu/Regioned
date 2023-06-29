@@ -34,7 +34,7 @@ impl ReverseTopological {
 		&self.seen
 	}
 
-	fn add_node<S: Parameters>(&mut self, nodes: &Nodes<S>, id: Id) {
+	fn add_node<N: Parameters>(&mut self, nodes: &Nodes<N>, id: Id) {
 		if self.seen[id] {
 			return;
 		}
@@ -45,12 +45,12 @@ impl ReverseTopological {
 		self.stack.push(Entry::Predecessors { id, count });
 	}
 
-	fn add_region<S: Parameters>(&mut self, nodes: &Nodes<S>, region: Region) {
+	fn add_region<N: Parameters>(&mut self, nodes: &Nodes<N>, region: Region) {
 		self.add_node(nodes, region.end());
 		self.add_node(nodes, region.start());
 	}
 
-	fn handle_predecessor<S: Parameters>(&mut self, nodes: &Nodes<S>, count: usize, id: Id) {
+	fn handle_predecessor<N: Parameters>(&mut self, nodes: &Nodes<N>, count: usize, id: Id) {
 		let node = &nodes[id];
 
 		if let Some(count) = count.checked_sub(1) {
@@ -68,7 +68,7 @@ impl ReverseTopological {
 		}
 	}
 
-	fn handle_region<S: Parameters>(&mut self, nodes: &Nodes<S>, count: usize, id: Id) {
+	fn handle_region<N: Parameters>(&mut self, nodes: &Nodes<N>, count: usize, id: Id) {
 		if let Some(count) = count.checked_sub(1) {
 			self.stack.push(Entry::Regions { id, count });
 
@@ -82,7 +82,7 @@ impl ReverseTopological {
 	}
 
 	#[inline]
-	fn next_in<S: Parameters>(&mut self, nodes: &Nodes<S>) -> Option<Id> {
+	fn next_in<N: Parameters>(&mut self, nodes: &Nodes<N>) -> Option<Id> {
 		loop {
 			match self.stack.pop()? {
 				Entry::Predecessors { id, count } => self.handle_predecessor(nodes, count, id),
@@ -92,9 +92,9 @@ impl ReverseTopological {
 		}
 	}
 
-	fn set_up_roots<S, I>(&mut self, nodes: &Nodes<S>, roots: I)
+	fn set_up_roots<N, I>(&mut self, nodes: &Nodes<N>, roots: I)
 	where
-		S: Parameters,
+		N: Parameters,
 		I: IntoIterator<Item = Id>,
 	{
 		self.seen.clear();
@@ -112,9 +112,9 @@ impl ReverseTopological {
 	/// Returns an iterator over the nodes in reverse topological order.
 	#[inline]
 	#[must_use]
-	pub fn iter<'a, 'b, S, I>(&'a mut self, nodes: &'b Nodes<S>, roots: I) -> Iter<'a, 'b, S>
+	pub fn iter<'a, 'b, N, I>(&'a mut self, nodes: &'b Nodes<N>, roots: I) -> Iter<'a, 'b, N>
 	where
-		S: Parameters,
+		N: Parameters,
 		I: IntoIterator<Item = Id>,
 	{
 		let topological = self;
@@ -126,12 +126,12 @@ impl ReverseTopological {
 }
 
 /// An iterator over the nodes in reverse topological order.
-pub struct Iter<'a, 'b, S> {
+pub struct Iter<'a, 'b, N> {
 	topological: &'a mut ReverseTopological,
-	nodes: &'b Nodes<S>,
+	nodes: &'b Nodes<N>,
 }
 
-impl<'a, 'b, S: Parameters> Iterator for Iter<'a, 'b, S> {
+impl<'a, 'b, N: Parameters> Iterator for Iter<'a, 'b, N> {
 	type Item = Id;
 
 	#[inline]
@@ -140,7 +140,7 @@ impl<'a, 'b, S: Parameters> Iterator for Iter<'a, 'b, S> {
 	}
 }
 
-impl<'a, 'b, S: Parameters> std::iter::FusedIterator for Iter<'a, 'b, S> {}
+impl<'a, 'b, N: Parameters> std::iter::FusedIterator for Iter<'a, 'b, N> {}
 
 #[cfg(test)]
 mod tests {
