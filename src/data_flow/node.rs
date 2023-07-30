@@ -268,6 +268,17 @@ impl<N> Node<N> {
 		}
 	}
 
+	/// Returns a mutable reference to the [`Node::Simple`] node if it is one.
+	#[inline]
+	#[must_use]
+	pub fn as_simple_mut(&mut self) -> Option<&mut N> {
+		if let Self::Simple(simple) = self {
+			Some(simple)
+		} else {
+			None
+		}
+	}
+
 	/// Returns a reference to the [`Node::Marker`] node if it is one.
 	#[inline]
 	#[must_use]
@@ -279,10 +290,32 @@ impl<N> Node<N> {
 		}
 	}
 
+	/// Returns a mutable reference to the [`Node::Marker`] node if it is one.
+	#[inline]
+	#[must_use]
+	pub fn as_marker_mut(&mut self) -> Option<&mut Marker> {
+		if let Self::Marker(marker) = self {
+			Some(marker)
+		} else {
+			None
+		}
+	}
+
 	/// Returns a reference to the [`Node::Compound`] node if it is one.
 	#[inline]
 	#[must_use]
 	pub const fn as_compound(&self) -> Option<&Compound> {
+		if let Self::Compound(compound) = self {
+			Some(compound)
+		} else {
+			None
+		}
+	}
+
+	/// Returns a mutable reference to the [`Node::Compound`] node if it is one.
+	#[inline]
+	#[must_use]
+	pub fn as_compound_mut(&mut self) -> Option<&mut Compound> {
 		if let Self::Compound(compound) = self {
 			Some(compound)
 		} else {
