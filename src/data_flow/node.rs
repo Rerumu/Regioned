@@ -166,6 +166,28 @@ pub enum Marker {
 	End { parameters: Vec<Link> },
 }
 
+impl Marker {
+	/// Returns a reference to the parameters of the node.
+	#[inline]
+	#[must_use]
+	pub fn as_parameters(&self) -> Option<&[Link]> {
+		match self {
+			Self::Start => None,
+			Self::End { parameters } => Some(parameters),
+		}
+	}
+
+	/// Returns a mutable reference to the parameters of the node.
+	#[inline]
+	#[must_use]
+	pub fn as_parameters_mut(&mut self) -> Option<&mut Vec<Link>> {
+		match self {
+			Self::Start => None,
+			Self::End { parameters } => Some(parameters),
+		}
+	}
+}
+
 /// A compound node.
 ///
 /// It is used to represent regions and their parameters.
