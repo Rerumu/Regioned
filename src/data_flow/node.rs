@@ -353,13 +353,13 @@ pub trait AsParameters {
 	fn as_parameters(&self) -> Option<&[Link]>;
 }
 
-impl<N: AsParameters> AsParameters for Node<N> {
+impl<N: AsParameters> Node<N> {
 	#[inline]
-	fn as_parameters(&self) -> Option<&[Link]> {
+	#[must_use]
+	pub fn as_parameters(&self) -> Option<&[Link]> {
 		match self {
 			Self::Simple(simple) => simple.as_parameters(),
-			Self::Marker(Marker::Start) => None,
-			Self::Marker(Marker::End { parameters }) => Some(parameters),
+			Self::Marker(marker) => marker.as_parameters(),
 			Self::Compound(compound) => Some(compound.as_parameters()),
 		}
 	}
@@ -372,13 +372,13 @@ pub trait AsParametersMut {
 	fn as_parameters_mut(&mut self) -> Option<&mut Vec<Link>>;
 }
 
-impl<N: AsParametersMut> AsParametersMut for Node<N> {
+impl<N: AsParametersMut> Node<N> {
 	#[inline]
-	fn as_parameters_mut(&mut self) -> Option<&mut Vec<Link>> {
+	#[must_use]
+	pub fn as_parameters_mut(&mut self) -> Option<&mut Vec<Link>> {
 		match self {
 			Self::Simple(simple) => simple.as_parameters_mut(),
-			Self::Marker(Marker::Start) => None,
-			Self::Marker(Marker::End { parameters }) => Some(parameters),
+			Self::Marker(marker) => marker.as_parameters_mut(),
 			Self::Compound(compound) => Some(compound.as_parameters_mut()),
 		}
 	}
@@ -386,7 +386,7 @@ impl<N: AsParametersMut> AsParametersMut for Node<N> {
 
 /// A node that can represent parameters as an iterator of [`Link`] referencess.
 pub trait Parameters {
-	type Iter<'a>: DoubleEndedIterator<Item = &'a Link> + ExactSizeIterator
+	type Iter<'a>: Iterator<Item = &'a Link>
 	where
 		Self: 'a;
 
@@ -395,17 +395,15 @@ pub trait Parameters {
 	fn parameters(&self) -> Self::Iter<'_>;
 }
 
-impl<N: Parameters> Parameters for Node<N> {
-	type Iter<'a> = Iter<'a, N::Iter<'a>> where N: 'a;
-
+impl<N: Parameters> Node<N> {
 	#[inline]
-	fn parameters(&self) -> Self::Iter<'_> {
-		let dead = &[];
+	#[must_use]
+	pub fn parameters(&self) -> Iter<N::Iter<'_>> {
+		let dead = &[][..];
 
 		match self {
 			Self::Simple(simple) => Iter::Opaque(simple.parameters()),
-			Self::Marker(Marker::Start) => Iter::List(dead.iter()),
-			Self::Marker(Marker::End { parameters }) => Iter::List(parameters.iter()),
+			Self::Marker(marker) => Iter::List(marker.as_parameters().unwrap_or(dead).iter()),
 			Self::Compound(compound) => Iter::List(compound.as_parameters().iter()),
 		}
 	}
@@ -413,7 +411,7 @@ impl<N: Parameters> Parameters for Node<N> {
 
 /// A node that can represent parameters as an iterator of mutable [`Link`] references.
 pub trait ParametersMut {
-	type Iter<'a>: DoubleEndedIterator<Item = &'a mut Link> + ExactSizeIterator
+	type Iter<'a>: Iterator<Item = &'a mut Link>
 	where
 		Self: 'a;
 
@@ -422,17 +420,19 @@ pub trait ParametersMut {
 	fn parameters_mut(&mut self) -> Self::Iter<'_>;
 }
 
-impl<N: ParametersMut> ParametersMut for Node<N> {
-	type Iter<'a> = IterMut<'a, N::Iter<'a>> where N: 'a;
-
+impl<N: ParametersMut> Node<N> {
 	#[inline]
-	fn parameters_mut(&mut self) -> Self::Iter<'_> {
-		let dead = &mut [];
+	#[must_use]
+	pub fn parameters_mut(&mut self) -> IterMut<N::Iter<'_>> {
+		let dead = &mut [][..];
 
 		match self {
 			Self::Simple(simple) => IterMut::Opaque(simple.parameters_mut()),
-			Self::Marker(Marker::Start) => IterMut::List(dead.iter_mut()),
-			Self::Marker(Marker::End { parameters }) => IterMut::List(parameters.iter_mut()),
+			Self::Marker(marker) => {
+				let iter = marker.as_parameters_mut().map_or(dead, Vec::as_mut_slice);
+
+				IterMut::List(iter.iter_mut())
+			}
 			Self::Compound(compound) => IterMut::List(compound.as_parameters_mut().iter_mut()),
 		}
 	}

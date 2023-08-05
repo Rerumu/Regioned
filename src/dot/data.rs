@@ -84,7 +84,7 @@ impl Dot {
 		for (id, node) in nodes.iter() {
 			let start = nodes.region_start_of(id);
 
-			self.ports[start].set_inward(node.parameters().len());
+			self.ports[start].set_inward(node.parameters().count());
 
 			for parameter in node.parameters() {
 				let end = nodes.region_end_of(parameter.node);

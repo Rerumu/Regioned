@@ -1,12 +1,12 @@
 use crate::data_flow::{
 	link::{Id, Region},
-	node::{Node, Parameters},
+	node::Parameters,
 	nodes::Nodes,
 };
 
 enum Entry {
-	Predecessors { id: Id, count: usize },
-	Regions { id: Id, count: usize },
+	Predecessors { id: Id, index: usize },
+	Regions { id: Id, index: usize },
 	Node { id: Id },
 }
 
@@ -34,48 +34,43 @@ impl ReverseTopological {
 		&self.seen
 	}
 
-	fn add_node<N: Parameters>(&mut self, nodes: &Nodes<N>, id: Id) {
+	fn add_node(&mut self, id: Id) {
 		if self.seen[id] {
 			return;
 		}
 
-		let count = nodes[id].parameters().len();
-
 		self.seen[id] = true;
-		self.stack.push(Entry::Predecessors { id, count });
+		self.stack.push(Entry::Predecessors { id, index: 0 });
 	}
 
-	fn add_region<N: Parameters>(&mut self, nodes: &Nodes<N>, region: Region) {
-		self.add_node(nodes, region.end());
-		self.add_node(nodes, region.start());
+	fn add_region(&mut self, region: Region) {
+		self.add_node(region.end());
+		self.add_node(region.start());
 	}
 
-	fn handle_predecessor<N: Parameters>(&mut self, nodes: &Nodes<N>, count: usize, id: Id) {
+	fn handle_predecessor<N: Parameters>(&mut self, nodes: &Nodes<N>, index: usize, id: Id) {
 		let node = &nodes[id];
+		let index = index + 1;
 
-		if let Some(count) = count.checked_sub(1) {
-			self.stack.push(Entry::Predecessors { id, count });
+		if let Some(parameter) = node.parameters().nth(index - 1) {
+			self.stack.push(Entry::Predecessors { id, index });
 
-			let parameter = node.parameters().nth_back(count).unwrap();
-
-			self.add_node(nodes, parameter.node);
-		} else if let Node::Compound(compound) = node {
-			let count = compound.regions().len();
-
-			self.handle_region(nodes, count, id);
+			self.add_node(parameter.node);
+		} else if node.as_compound().is_some() {
+			self.handle_region(nodes, 0, id);
 		} else {
 			self.stack.push(Entry::Node { id });
 		}
 	}
 
-	fn handle_region<N: Parameters>(&mut self, nodes: &Nodes<N>, count: usize, id: Id) {
-		if let Some(count) = count.checked_sub(1) {
-			self.stack.push(Entry::Regions { id, count });
+	fn handle_region<N>(&mut self, nodes: &Nodes<N>, index: usize, id: Id) {
+		let compound = nodes[id].as_compound().unwrap();
+		let index = index + 1;
 
-			let compound = &nodes[id].as_compound().unwrap();
-			let region = *compound.regions().iter().nth_back(count).unwrap();
+		if let Some(region) = compound.regions().iter().nth(index - 1).copied() {
+			self.stack.push(Entry::Regions { id, index });
 
-			self.add_region(nodes, region);
+			self.add_region(region);
 		} else {
 			self.stack.push(Entry::Node { id });
 		}
@@ -85,25 +80,24 @@ impl ReverseTopological {
 	fn next_in<N: Parameters>(&mut self, nodes: &Nodes<N>) -> Option<Id> {
 		loop {
 			match self.stack.pop()? {
-				Entry::Predecessors { id, count } => self.handle_predecessor(nodes, count, id),
-				Entry::Regions { id, count } => self.handle_region(nodes, count, id),
+				Entry::Predecessors { id, index } => self.handle_predecessor(nodes, index, id),
+				Entry::Regions { id, index } => self.handle_region(nodes, index, id),
 				Entry::Node { id } => return Some(id),
 			}
 		}
 	}
 
-	fn set_up_roots<N, I>(&mut self, nodes: &Nodes<N>, roots: I)
+	fn set_up_roots<I>(&mut self, active: usize, roots: I)
 	where
-		N: Parameters,
 		I: IntoIterator<Item = Id>,
 	{
 		self.seen.clear();
-		self.seen.resize(nodes.active(), false);
+		self.seen.resize(active, false);
 
 		self.stack.clear();
 
 		for id in roots {
-			self.add_node(nodes, id);
+			self.add_node(id);
 		}
 
 		self.stack.reverse();
@@ -119,7 +113,7 @@ impl ReverseTopological {
 	{
 		let topological = self;
 
-		topological.set_up_roots(nodes, roots);
+		topological.set_up_roots(nodes.active(), roots);
 
 		Iter { topological, nodes }
 	}
