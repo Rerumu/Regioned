@@ -32,21 +32,25 @@ pub trait Description {
 
 impl Description for Marker {
 	fn write_content(&self, writer: &mut dyn Write) -> Result<()> {
-		match self {
-			Self::Start => write!(writer, "Start"),
-			Self::End { .. } => write!(writer, "End"),
-		}
+		let name = match self {
+			Self::Start => "Start",
+			Self::End { .. } => "End",
+		};
+
+		write!(writer, "<TR><TD>{name}</TD></TR>")
 	}
 }
 
 impl Description for Compound {
 	fn write_content(&self, writer: &mut dyn Write) -> Result<()> {
-		match self {
-			Self::Gamma { .. } => write!(writer, "Gamma"),
-			Self::Theta { .. } => write!(writer, "Theta"),
-			Self::Lambda { .. } => write!(writer, "Lambda"),
-			Self::Phi { .. } => write!(writer, "Phi"),
-		}
+		let name = match self {
+			Self::Gamma { .. } => "Gamma",
+			Self::Theta { .. } => "Theta",
+			Self::Lambda { .. } => "Lambda",
+			Self::Phi { .. } => "Phi",
+		};
+
+		write!(writer, "<TR><TD>{name}</TD></TR>")
 	}
 }
 

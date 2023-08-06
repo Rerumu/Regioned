@@ -80,7 +80,7 @@ impl Anchor {
 	where
 		F: Fn(&mut dyn Write, usize) -> Result<()>,
 	{
-		write!(w, "<TR>")?;
+		write!(w, r#"<TR><TD><TABLE CELLSPACING="0"><TR>"#)?;
 
 		for i in 0..len {
 			write!(w, r#"<TD PORT="{}{i}">"#, self.side())?;
@@ -90,7 +90,7 @@ impl Anchor {
 			write!(w, "</TD>")?;
 		}
 
-		write!(w, "</TR>")
+		write!(w, "</TR></TABLE></TD></TR>")
 	}
 }
 
@@ -109,25 +109,45 @@ impl PortCounts {
 		self.outward = self.outward.max(outward);
 	}
 
-	pub fn write<T: Description>(&self, w: &mut dyn Write, node: &T) -> Result<()> {
-		write!(w, r#"[label = <<TABLE CELLSPACING="0">"#)?;
+	fn write_pre_table<T: Description>(&self, w: &mut dyn Write, node: &T) -> Result<()> {
+		write!(w, r#"<TABLE BORDER="0" CELLPADDING="0" CELLSPACING="0">"#)?;
 
 		if self.inward > 1 {
 			Anchor::In.write_list(w, self.inward, |w, port| node.write_port_in(w, port))?;
 		}
 
-		let span = self.inward.max(self.outward).max(1);
+		write!(w, "<TR><TD>")
+	}
 
-		write!(w, r#"<TR><TD COLSPAN="{span}">"#)?;
-
-		node.write_content(w)?;
-
+	fn write_post_table<T: Description>(&self, w: &mut dyn Write, node: &T) -> Result<()> {
 		write!(w, "</TD></TR>")?;
 
 		if self.outward > 1 {
 			Anchor::Out.write_list(w, self.outward, |w, port| node.write_port_out(w, port))?;
 		}
 
-		writeln!(w, "</TABLE>>];")
+		write!(w, "</TABLE>")
+	}
+
+	pub fn write<T: Description>(&self, w: &mut dyn Write, node: &T) -> Result<()> {
+		let has_table = self.inward > 1 || self.outward > 1;
+
+		write!(w, "[label = <")?;
+
+		if has_table {
+			self.write_pre_table(w, node)?;
+		}
+
+		write!(w, r#"<TABLE CELLSPACING="0">"#)?;
+
+		node.write_content(w)?;
+
+		write!(w, "</TABLE>")?;
+
+		if has_table {
+			self.write_post_table(w, node)?;
+		}
+
+		writeln!(w, ">];")
 	}
 }
