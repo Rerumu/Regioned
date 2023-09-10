@@ -44,8 +44,8 @@ impl ReverseTopological {
 	}
 
 	fn add_region(&mut self, region: Region) {
-		self.add_node(region.end());
-		self.add_node(region.start());
+		self.add_node(region.end);
+		self.add_node(region.start);
 	}
 
 	fn handle_predecessor<N: Parameters>(&mut self, nodes: &Nodes<N>, index: usize, id: Id) {
@@ -175,19 +175,19 @@ mod tests {
 		let mut nodes = Nodes::new();
 
 		let region_1 = nodes.add_region();
-		let value_1 = nodes.add_simple(Simple::Ref(region_1.start().into()));
+		let value_1 = nodes.add_simple(Simple::Ref(region_1.start.into()));
 		let value_2 = nodes.add_simple(Simple::Ref(value_1.into()));
 
-		nodes[region_1.end()]
+		nodes[region_1.end]
 			.as_parameters_mut()
 			.unwrap()
 			.push(value_2.into());
 
 		let region_2 = nodes.add_region();
-		let value_3 = nodes.add_simple(Simple::Ref(region_2.start().into()));
-		let value_4 = nodes.add_simple(Simple::Ref(region_2.start().into()));
+		let value_3 = nodes.add_simple(Simple::Ref(region_2.start.into()));
+		let value_4 = nodes.add_simple(Simple::Ref(region_2.start.into()));
 
-		nodes[region_2.end()]
+		nodes[region_2.end]
 			.as_parameters_mut()
 			.unwrap()
 			.extend([Link::from(value_3), Link::from(value_4)]);
@@ -198,15 +198,15 @@ mod tests {
 		let mut counter = 0;
 		let mut expected = vec![0; nodes.active()];
 
-		expected[region_1.start()] = 1;
+		expected[region_1.start] = 1;
 		expected[value_1] = 2;
 		expected[value_2] = 3;
-		expected[region_1.end()] = 4;
+		expected[region_1.end] = 4;
 
-		expected[region_2.start()] = 5;
+		expected[region_2.start] = 5;
 		expected[value_3] = 6;
 		expected[value_4] = 7;
-		expected[region_2.end()] = 8;
+		expected[region_2.end] = 8;
 
 		expected[gamma] = 9;
 		expected[value_5] = 10;

@@ -33,9 +33,9 @@ impl RelaxDependencies {
 	where
 		N: Parameters,
 	{
-		let iter = nodes[region.end()]
+		let iter = nodes[region.end]
 			.parameters()
-			.map(|&end| load_passthrough(parameters, region.start(), end));
+			.map(|&end| load_passthrough(parameters, region.start, end));
 
 		self.maps.clear();
 		self.maps.extend(iter);
@@ -50,11 +50,11 @@ impl RelaxDependencies {
 
 		self.add_map_results(nodes, parameters, region);
 
-		for region in regions {
-			let results = nodes[region.end()].parameters();
+		for &Region { start, end } in regions {
+			let results = nodes[end].parameters();
 
 			for (&result, old) in results.zip(&mut self.maps) {
-				if load_passthrough(parameters, region.start(), result) != *old {
+				if load_passthrough(parameters, start, result) != *old {
 					*old = None;
 				}
 			}
@@ -69,8 +69,8 @@ impl RelaxDependencies {
 		// it won't be used anyway as it's not output.
 		self.add_map_results(nodes, parameters, region);
 
-		let results = nodes[region.end()].parameters();
-		let inputs = Link::from(region.start()).iter();
+		let results = nodes[region.end].parameters();
+		let inputs = Link::from(region.start).iter();
 
 		for ((&result, start), old) in results.zip(inputs).zip(&mut self.maps) {
 			if result != start {

@@ -9,28 +9,8 @@ pub type Id = arena::key::Id<arena::version::Nil>;
 /// A region with a start and an end marker that delimit it.
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Region {
-	start: Id,
-	end: Id,
-}
-
-impl Region {
-	pub(crate) const fn new(start: Id, end: Id) -> Self {
-		Self { start, end }
-	}
-
-	/// Returns the start marker [`Id`] of the region.
-	#[inline]
-	#[must_use]
-	pub const fn start(self) -> Id {
-		self.start
-	}
-
-	/// Returns the end marker [`Id`] of the region.
-	#[inline]
-	#[must_use]
-	pub const fn end(self) -> Id {
-		self.end
-	}
+	pub start: Id,
+	pub end: Id,
 }
 
 /// A relationship between an [`Id`] and a [`u16`] port. Two of these together

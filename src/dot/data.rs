@@ -43,11 +43,11 @@ trait Extension<N> {
 
 impl<N: Parameters> Extension<N> for Nodes<N> {
 	fn region_start_of(&self, id: Id) -> Id {
-		region_of(&self[id]).map_or(id, Region::start)
+		region_of(&self[id]).map_or(id, |region| region.start)
 	}
 
 	fn region_end_of(&self, id: Id) -> Id {
-		region_of(&self[id]).map_or(id, Region::end)
+		region_of(&self[id]).map_or(id, |region| region.end)
 	}
 
 	fn write_links_in_place(&self, w: &mut dyn Write, id: Id, place: Id) -> Result<()> {
@@ -96,8 +96,8 @@ impl Dot {
 			if let Node::Compound(compound) = node {
 				let regions = compound.regions();
 
-				self.compounds.insert(regions.first().unwrap().start(), id);
-				self.compounds.insert(regions.last().unwrap().end(), id);
+				self.compounds.insert(regions.first().unwrap().start, id);
+				self.compounds.insert(regions.last().unwrap().end, id);
 			}
 		}
 	}
@@ -133,10 +133,7 @@ impl Dot {
 	where
 		N: Parameters + Description,
 	{
-		for (i, region) in regions.iter().enumerate() {
-			let start = region.start();
-			let end = region.end();
-
+		for (i, &Region { start, end }) in regions.iter().enumerate() {
 			writeln!(w, "subgraph cluster_{start} {{")?;
 			writeln!(w, r#"label = "{i}";"#)?;
 
@@ -171,8 +168,8 @@ impl Dot {
 			Compound::Theta { region, .. }
 			| Compound::Lambda { region, .. }
 			| Compound::Phi { region, .. } => {
-				self.write_simple(w, nodes, region.start(), id)?;
-				self.write_simple(w, nodes, region.end(), region.end())?;
+				self.write_simple(w, nodes, region.start, id)?;
+				self.write_simple(w, nodes, region.end, region.end)?;
 			}
 		}
 

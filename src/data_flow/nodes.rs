@@ -58,7 +58,7 @@ impl<N> Nodes<N> {
 			parameters: Vec::new(),
 		}));
 
-		Region::new(start, end)
+		Region { start, end }
 	}
 
 	/// Adds a [`Compound::Gamma`] node to the and returns its [`Id`].
