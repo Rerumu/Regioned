@@ -4,7 +4,7 @@ use arena::{collection::Arena, key::Key};
 use tinyvec::TinyVec;
 
 use super::{
-	link::{Id, Region},
+	link::{Id, Link, Region},
 	node::{Compound, Marker, Node},
 };
 
@@ -42,74 +42,80 @@ impl<N> Nodes<N> {
 		self.nodes.keys().next_back().map_or(0, |id| id.index() + 1)
 	}
 
-	/// Adds a [`Node::Simple`] node to the graph and returns its [`Id`].
+	/// Adds a [`Node::Simple`] node to the graph and returns its [`Link`].
 	#[inline]
 	#[must_use]
-	pub fn add_simple(&mut self, simple: N) -> Id {
-		self.nodes.insert(Node::Simple(simple))
+	pub fn add_simple(&mut self, simple: N) -> Link {
+		self.nodes.insert(Node::Simple(simple)).into()
 	}
 
 	/// Adds a [`Region`] to the graph and returns it.
 	#[inline]
 	#[must_use]
-	pub fn add_region(&mut self) -> Region {
+	pub fn add_region<F>(&mut self, results: F) -> Region
+	where
+		F: FnOnce(&mut Self, Link) -> Vec<Link>,
+	{
 		let start = self.nodes.insert(Node::Marker(Marker::Start));
-		let end = self.nodes.insert(Node::Marker(Marker::End {
-			parameters: Vec::new(),
-		}));
+		let end = Node::Marker(Marker::End {
+			parameters: results(self, start.into()),
+		});
 
-		Region { start, end }
+		Region {
+			start,
+			end: self.nodes.insert(end),
+		}
 	}
 
-	/// Adds a [`Compound::Gamma`] node to the and returns its [`Id`].
+	/// Adds a [`Compound::Gamma`] node to the and returns its [`Link`].
 	#[inline]
 	#[must_use]
-	pub fn add_gamma(&mut self, regions: TinyVec<[Region; 2]>) -> Id {
-		let compound = Compound::Gamma {
-			parameters: Vec::new(),
+	pub fn add_gamma(&mut self, parameters: Vec<Link>, regions: TinyVec<[Region; 2]>) -> Link {
+		let compound = Node::Compound(Compound::Gamma {
+			parameters,
 			regions,
-		};
+		});
 
-		self.nodes.insert(compound.into())
+		self.nodes.insert(compound).into()
 	}
 
-	/// Adds a [`Compound::Theta`] node to the and returns its [`Id`] and [`Region`].
+	/// Adds a [`Compound::Theta`] node to the and returns its [`Link`] and [`Region`].
 	#[inline]
 	#[must_use]
-	pub fn add_theta(&mut self) -> (Id, Region) {
-		let region = self.add_region();
-		let compound = Compound::Theta {
-			parameters: Vec::new(),
-			region,
-		};
+	pub fn add_theta<F>(&mut self, parameters: Vec<Link>, results: F) -> (Link, Region)
+	where
+		F: FnOnce(&mut Self, Link) -> Vec<Link>,
+	{
+		let region = self.add_region(results);
+		let compound = Node::Compound(Compound::Theta { parameters, region });
 
-		(self.nodes.insert(compound.into()), region)
+		(self.nodes.insert(compound).into(), region)
 	}
 
-	/// Adds a [`Compound::Lambda`] node to the and returns its [`Id`] and [`Region`].
+	/// Adds a [`Compound::Lambda`] node to the and returns its [`Link`] and [`Region`].
 	#[inline]
 	#[must_use]
-	pub fn add_lambda(&mut self) -> (Id, Region) {
-		let region = self.add_region();
-		let compound = Compound::Lambda {
-			parameters: Vec::new(),
-			region,
-		};
+	pub fn add_lambda<F>(&mut self, parameters: Vec<Link>, results: F) -> (Link, Region)
+	where
+		F: FnOnce(&mut Self, Link) -> Vec<Link>,
+	{
+		let region = self.add_region(results);
+		let compound = Node::Compound(Compound::Lambda { parameters, region });
 
-		(self.nodes.insert(compound.into()), region)
+		(self.nodes.insert(compound).into(), region)
 	}
 
-	/// Adds a [`Compound::Phi`] node to the and returns its [`Id`] and [`Region`].
+	/// Adds a [`Compound::Phi`] node to the and returns its [`Link`] and [`Region`].
 	#[inline]
 	#[must_use]
-	pub fn add_phi(&mut self) -> (Id, Region) {
-		let region = self.add_region();
-		let compound = Compound::Phi {
-			parameters: Vec::new(),
-			region,
-		};
+	pub fn add_phi<F>(&mut self, parameters: Vec<Link>, results: F) -> (Link, Region)
+	where
+		F: FnOnce(&mut Self, Link) -> Vec<Link>,
+	{
+		let region = self.add_region(results);
+		let compound = Node::Compound(Compound::Phi { parameters, region });
 
-		(self.nodes.insert(compound.into()), region)
+		(self.nodes.insert(compound).into(), region)
 	}
 }
 

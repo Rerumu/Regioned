@@ -437,15 +437,3 @@ impl<N: ParametersMut> Node<N> {
 		}
 	}
 }
-
-impl<N> From<Marker> for Node<N> {
-	fn from(marker: Marker) -> Self {
-		Self::Marker(marker)
-	}
-}
-
-impl<N> From<Compound> for Node<N> {
-	fn from(compound: Compound) -> Self {
-		Self::Compound(compound)
-	}
-}

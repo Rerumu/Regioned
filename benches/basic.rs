@@ -16,9 +16,9 @@ pub fn bench_add(c: &mut Criterion) {
 			let mut nodes = Nodes::new();
 
 			for i in 0..NUM_ELEMENTS {
-				let id = nodes.add_simple(NoOp(i));
+				let link = nodes.add_simple(NoOp(i));
 
-				black_box(id);
+				black_box(link);
 			}
 
 			nodes
@@ -30,7 +30,7 @@ pub fn bench_add(c: &mut Criterion) {
 			let mut nodes = Nodes::<NoOp>::new();
 
 			for _ in 0..NUM_ELEMENTS {
-				let result = nodes.add_phi();
+				let result = nodes.add_phi(Vec::new(), |_, _| Vec::new());
 
 				black_box(result);
 			}
@@ -52,9 +52,9 @@ pub fn bench_remove(c: &mut Criterion) {
 				let mut indices = Vec::new();
 
 				for i in 0..NUM_ELEMENTS {
-					let id = nodes.add_simple(NoOp(i));
+					let link = nodes.add_simple(NoOp(i));
 
-					indices.push(id);
+					indices.push(link.node);
 				}
 
 				(nodes, indices)
@@ -75,9 +75,9 @@ pub fn bench_remove(c: &mut Criterion) {
 				let mut indices = Vec::new();
 
 				for _ in 0..NUM_ELEMENTS {
-					let result = nodes.add_phi();
+					let result = nodes.add_phi(Vec::new(), |_, _| Vec::new());
 
-					indices.push(result.0);
+					indices.push(result.0.node);
 				}
 
 				(nodes, indices)

@@ -138,6 +138,8 @@ impl<'a, 'b, N: Parameters> std::iter::FusedIterator for Iter<'a, 'b, N> {}
 
 #[cfg(test)]
 mod tests {
+	use tinyvec::tiny_vec;
+
 	use crate::data_flow::{
 		link::Link,
 		node::{AsParametersMut, Parameters},
@@ -173,45 +175,43 @@ mod tests {
 	#[test]
 	fn test_is_in_order() {
 		let mut nodes = Nodes::new();
+		let mut expected = [0; 10];
 
-		let region_1 = nodes.add_region();
-		let value_1 = nodes.add_simple(Simple::Ref(region_1.start.into()));
-		let value_2 = nodes.add_simple(Simple::Ref(value_1.into()));
+		let region_1 = nodes.add_region(|nodes, start| {
+			let value_1 = nodes.add_simple(Simple::Ref(start));
+			let value_2 = nodes.add_simple(Simple::Ref(value_1));
 
-		nodes[region_1.end]
-			.as_parameters_mut()
-			.unwrap()
-			.push(value_2.into());
+			expected[value_1.node] = 2;
+			expected[value_2.node] = 3;
 
-		let region_2 = nodes.add_region();
-		let value_3 = nodes.add_simple(Simple::Ref(region_2.start.into()));
-		let value_4 = nodes.add_simple(Simple::Ref(region_2.start.into()));
-
-		nodes[region_2.end]
-			.as_parameters_mut()
-			.unwrap()
-			.extend([Link::from(value_3), Link::from(value_4)]);
-
-		let value_5 = nodes.add_simple(Simple::Leaf);
-		let gamma = nodes.add_gamma([region_1, region_2].into());
-
-		let mut counter = 0;
-		let mut expected = vec![0; nodes.active()];
+			vec![value_2]
+		});
 
 		expected[region_1.start] = 1;
-		expected[value_1] = 2;
-		expected[value_2] = 3;
 		expected[region_1.end] = 4;
 
+		let region_2 = nodes.add_region(|nodes, start| {
+			let value_3 = nodes.add_simple(Simple::Ref(start));
+			let value_4 = nodes.add_simple(Simple::Ref(start));
+
+			expected[value_3.node] = 6;
+			expected[value_4.node] = 7;
+
+			vec![value_3, value_4]
+		});
+
 		expected[region_2.start] = 5;
-		expected[value_3] = 6;
-		expected[value_4] = 7;
 		expected[region_2.end] = 8;
 
-		expected[gamma] = 9;
-		expected[value_5] = 10;
+		let value_5 = nodes.add_simple(Simple::Leaf);
+		let gamma = nodes.add_gamma(Vec::new(), tiny_vec![region_1, region_2]);
 
-		for id in ReverseTopological::new().iter(&nodes, [gamma, value_5]) {
+		expected[gamma.node] = 9;
+		expected[value_5.node] = 10;
+
+		let mut counter = 0;
+
+		for id in ReverseTopological::new().iter(&nodes, [gamma.node, value_5.node]) {
 			counter += 1;
 
 			assert_eq!(expected[id], counter, "Node {id} was not in order");
