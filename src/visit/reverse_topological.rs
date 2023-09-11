@@ -174,7 +174,7 @@ mod tests {
 
 	#[test]
 	fn test_is_in_order() {
-		let mut nodes = Nodes::new();
+		let mut nodes = Nodes::<Simple>::new();
 		let mut expected = [0; 10];
 
 		let region_1 = nodes.add_region(|nodes, start| {

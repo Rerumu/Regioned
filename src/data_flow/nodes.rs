@@ -45,8 +45,10 @@ impl<N> Nodes<N> {
 	/// Adds a [`Node::Simple`] node to the graph and returns its [`Link`].
 	#[inline]
 	#[must_use]
-	pub fn add_simple(&mut self, simple: N) -> Link {
-		self.nodes.insert(Node::Simple(simple)).into()
+	pub fn add_simple<I: Into<N>>(&mut self, data: I) -> Link {
+		let simple = Node::Simple(data.into());
+
+		self.nodes.insert(simple).into()
 	}
 
 	/// Adds a [`Region`] to the graph and returns it.

@@ -13,7 +13,7 @@ pub fn bench_add(c: &mut Criterion) {
 
 	group.bench_function("Node", |b| {
 		b.iter_with_large_drop(|| {
-			let mut nodes = Nodes::new();
+			let mut nodes = Nodes::<NoOp>::new();
 
 			for i in 0..NUM_ELEMENTS {
 				let link = nodes.add_simple(NoOp(i));
@@ -48,7 +48,7 @@ pub fn bench_remove(c: &mut Criterion) {
 	group.bench_function("Node", |b| {
 		b.iter_batched_ref(
 			|| {
-				let mut nodes = Nodes::new();
+				let mut nodes = Nodes::<NoOp>::new();
 				let mut indices = Vec::new();
 
 				for i in 0..NUM_ELEMENTS {
