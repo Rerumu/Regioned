@@ -4,6 +4,7 @@ use regioned::data_flow::nodes::Nodes;
 
 const NUM_ELEMENTS: u64 = 2048;
 
+#[allow(dead_code)]
 struct NoOp(u64);
 
 pub fn bench_add(c: &mut Criterion) {
