@@ -1,6 +1,9 @@
 use std::ops::{Deref, DerefMut};
 
-use arena::{collection::Arena, key::Key};
+use arena::{
+	collection::Arena,
+	referent::{Referent, Similar},
+};
 use tinyvec::TinyVec;
 
 use super::{
@@ -20,7 +23,7 @@ impl<N> Nodes<N> {
 	/// Creates a new, empty [`Nodes`].
 	#[inline]
 	#[must_use]
-	pub const fn new() -> Self {
+	pub fn new() -> Self {
 		let nodes = Arena::new();
 
 		Self { nodes }
@@ -39,11 +42,13 @@ impl<N> Nodes<N> {
 	#[inline]
 	#[must_use]
 	pub fn active(&self) -> usize {
-		self.nodes.keys().next_back().map_or(0, |id| id.index() + 1)
+		self.nodes
+			.keys()
+			.next_back()
+			.map_or(0, |id| id.index().try_into_unchecked() + 1)
 	}
 
 	/// Adds a [`Node::Simple`] node to the graph and returns its [`Link`].
-	#[inline]
 	#[must_use]
 	pub fn add_simple<I: Into<N>>(&mut self, data: I) -> Link {
 		let simple = Node::Simple(data.into());

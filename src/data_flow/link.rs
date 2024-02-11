@@ -1,10 +1,10 @@
 use std::{iter::Map, ops::RangeInclusive};
 
 #[cfg(debug_assertions)]
-pub type Id = arena::key::Id<std::num::NonZeroU32>;
+pub type Id = arena::referent::Id<u32, std::num::NonZeroU32>;
 
 #[cfg(not(debug_assertions))]
-pub type Id = arena::key::Id<arena::version::Nil>;
+pub type Id = arena::referent::Id<u32, arena::referent::Nil>;
 
 /// A region with a start and an end marker that delimit it.
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
