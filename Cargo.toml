@@ -1,0 +1,19 @@
+[package]
+name = "regioned"
+version = "2.0.0"
+edition = "2021"
+
+[dependencies.arena]
+git = "https://github.com/Rerumu/Arena.git"
+rev = "471b9e1"
+
+[dependencies.set]
+git = "https://github.com/Rerumu/Set.git"
+rev = "492b2f8"
+
+[dependencies.tinyvec]
+version = "1.6.0"
+features = ["alloc"]
+
+[features]
+display = []
