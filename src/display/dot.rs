@@ -219,7 +219,7 @@ impl Dot {
 		writeln!(write, "digraph {{")?;
 		writeln!(
 			write,
-			"\tnode [shape = plain, style = filled, color = \"#FFFFFF\", fontcolor = \"#FFFFFF\"];"
+			"\tnode [shape = plain, style = filled, ordering = in, color = \"#FFFFFF\", fontcolor = \"#FFFFFF\"];"
 		)?;
 
 		self.find_topological(nodes, start);
