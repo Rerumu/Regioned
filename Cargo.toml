@@ -1,0 +1,15 @@
+[package]
+name = "regioned"
+version = "3.0.0"
+edition = "2021"
+
+[dependencies.list]
+git = "https://github.com/Rerumu/List.git"
+rev = "2464410"
+
+[dependencies.set]
+git = "https://github.com/Rerumu/Set.git"
+rev = "0e6d012"
+
+[features]
+display = []
