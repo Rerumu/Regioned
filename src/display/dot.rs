@@ -1,5 +1,7 @@
 use std::io::{Result, Write};
 
+use arena::referent::{Referent, Similar};
+
 use crate::{
 	collection::{
 		data_flow_graph::DataFlowGraph,
@@ -202,6 +204,32 @@ impl Dot {
 		Ok(())
 	}
 
+	fn write_node_outliers<T>(&self, write: &mut dyn Write, nodes: &DataFlowGraph<T>) -> Result<()>
+	where
+		T: Parameters + Description,
+	{
+		writeln!(write, "\tsubgraph outliers {{")?;
+		writeln!(write, "\t\tnode [fillcolor = \"#000000\"];")?;
+
+		let unseen = self.depth_first_searcher.unseen();
+
+		for (id, node) in nodes.iter() {
+			if !unseen.contains(id.index().try_into_unchecked()) {
+				continue;
+			}
+
+			write!(write, "\t\t{id} ")?;
+
+			write_contents(write, node, Ports::new(0, 0))?;
+
+			for Link { node, .. } in node.parameters() {
+				writeln!(write, "\t\t{node} -> {id};")?;
+			}
+		}
+
+		writeln!(write, "\t}}")
+	}
+
 	/// Writes the data flow graph to the writer in the DOT format.
 	///
 	/// # Errors
@@ -226,6 +254,7 @@ impl Dot {
 		self.find_ports(nodes);
 		self.write_node_bodies(write, nodes)?;
 		self.write_node_links(write, nodes)?;
+		self.write_node_outliers(write, nodes)?;
 
 		writeln!(write, "}}")
 	}
