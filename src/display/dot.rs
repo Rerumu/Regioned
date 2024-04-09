@@ -8,7 +8,7 @@ use crate::{
 		link::{Id, Link},
 		node::Parameters,
 	},
-	visit::depth_first_searcher::DepthFirstSearcher,
+	visit::depth_first_searcher::{DepthFirstSearcher, Event},
 };
 
 use super::{
@@ -110,20 +110,16 @@ impl Dot {
 
 		let mut label = Label::A;
 
-		self.depth_first_searcher.run(nodes, start, |id, post| {
-			if !post {
-				self.labels.push(label);
-				self.nodes.push(id);
-			}
-
-			if nodes[id].as_simple().is_none() {
-				if post {
-					label = label.previous();
-				} else {
-					label = label.next();
+		self.depth_first_searcher
+			.run(nodes, start, |event| match event {
+				Event::PreNode { id } => {
+					self.labels.push(label);
+					self.nodes.push(id);
 				}
-			}
-		});
+				Event::PostNode { .. } => {}
+				Event::PreRegion { .. } => label = label.next(),
+				Event::PostRegion { .. } => label = label.previous(),
+			});
 	}
 
 	fn find_ports<T: Parameters>(&mut self, nodes: &DataFlowGraph<T>) {
@@ -211,10 +207,10 @@ impl Dot {
 		writeln!(write, "\tsubgraph outliers {{")?;
 		writeln!(write, "\t\tnode [fillcolor = \"#000000\"];")?;
 
-		let unseen = self.depth_first_searcher.unseen();
+		let set = self.depth_first_searcher.set();
 
 		for (id, node) in nodes.iter() {
-			if !unseen.contains(id.index().try_into_unchecked()) {
+			if !set.contains(id.index().try_into_unchecked()) {
 				continue;
 			}
 

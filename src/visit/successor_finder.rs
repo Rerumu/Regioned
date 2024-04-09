@@ -2,7 +2,7 @@ use tinyvec::TinyVec;
 
 use crate::collection::{data_flow_graph::DataFlowGraph, link::Id, node::Parameters};
 
-use super::depth_first_searcher::DepthFirstSearcher;
+use super::depth_first_searcher::{DepthFirstSearcher, Event};
 
 pub type SuccessorList = TinyVec<[Id; 2]>;
 
@@ -45,10 +45,8 @@ impl SuccessorFinder {
 		}
 
 		searcher.restrict(0..needed);
-		searcher.run(nodes, start, |id, post| {
-			if post {
-				return;
-			}
+		searcher.run(nodes, start, |event| {
+			let Event::PreNode { id } = event else { return };
 
 			for predecessor in nodes[id].parameters() {
 				let successors = &mut self.cache[predecessor.node];

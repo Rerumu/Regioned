@@ -1,18 +1,41 @@
+use std::ops::Range;
+
 use arena::referent::{Referent, Similar};
 use set::Set;
 
-use crate::collection::{data_flow_graph::DataFlowGraph, link::Id, node::Parameters};
+use crate::collection::{
+	data_flow_graph::DataFlowGraph,
+	link::{Id, Link},
+	node::Parameters,
+};
+
+fn store_iterator<I: Iterator<Item = Id>>(data: &mut Vec<Id>, iterator: I) -> Range<usize> {
+	let start = data.len();
+
+	data.extend(iterator);
+	data[start..].reverse();
+
+	start..data.len()
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Event {
+	PreNode { id: Id },
+	PostNode { id: Id },
+	PreRegion { id: Id, region: usize },
+	PostRegion { id: Id, region: usize },
+}
 
 struct Item {
-	id: Id,
-	parameters: Vec<Id>,
+	event: Event,
+	parameters: Range<usize>,
 }
 
 pub struct DepthFirstSearcher {
 	items: Vec<Item>,
-	unseen: Set,
+	set: Set,
 
-	vec_pooled: Vec<Vec<Id>>,
+	parameters: Vec<Id>,
 }
 
 impl DepthFirstSearcher {
@@ -21,62 +44,94 @@ impl DepthFirstSearcher {
 	pub const fn new() -> Self {
 		Self {
 			items: Vec::new(),
-			unseen: Set::new(),
-			vec_pooled: Vec::new(),
+			set: Set::new(),
+
+			parameters: Vec::new(),
 		}
 	}
 
-	fn queue_item<T, H>(&mut self, nodes: &DataFlowGraph<T>, id: Id, mut handler: H)
-	where
-		T: Parameters,
-		H: FnMut(Id, bool),
-	{
-		if !self.unseen.remove(id.index().try_into_unchecked()) {
+	fn queue_pre_node(&mut self, id: Id) {
+		let parameters = self.parameters.len()..self.parameters.len();
+
+		self.items.push(Item {
+			event: Event::PreNode { id },
+			parameters,
+		});
+	}
+
+	fn queue_post_node<T: Parameters>(&mut self, nodes: &DataFlowGraph<T>, id: Id) {
+		let parameters = store_iterator(
+			&mut self.parameters,
+			nodes[id].parameters().map(|link| link.node),
+		);
+
+		self.items.push(Item {
+			event: Event::PostNode { id },
+			parameters,
+		});
+	}
+
+	fn queue_pre_region(&mut self, id: Id, region: usize) {
+		let parameters = self.parameters.len()..self.parameters.len();
+
+		self.items.push(Item {
+			event: Event::PreRegion { id, region },
+			parameters,
+		});
+	}
+
+	fn queue_post_region(&mut self, id: Id, region: usize, list: &[Link]) {
+		let parameters = store_iterator(&mut self.parameters, list.iter().map(|link| link.node));
+
+		self.items.push(Item {
+			event: Event::PostRegion { id, region },
+			parameters,
+		});
+	}
+
+	fn queue_node<T: Parameters>(&mut self, nodes: &DataFlowGraph<T>, id: Id) {
+		if !self.set.remove(id.index().try_into_unchecked()) {
 			return;
 		}
 
-		let mut parameters = self.vec_pooled.pop().unwrap_or_default();
-		let node = &nodes[id];
+		let regions = nodes[id].as_results().unwrap_or_default();
 
-		if let Some(results) = node.as_results() {
-			parameters.extend(results.iter().flatten().map(|link| link.node));
+		for (region, list) in regions.iter().enumerate().rev() {
+			self.queue_post_region(id, region, list);
+			self.queue_pre_region(id, region);
 		}
 
-		parameters.extend(node.parameters().map(|link| link.node));
-		parameters.reverse();
-
-		self.items.push(Item { id, parameters });
-
-		handler(id, false);
+		self.queue_post_node(nodes, id);
+		self.queue_pre_node(id);
 	}
 
 	#[inline]
 	#[must_use]
-	pub const fn unseen(&self) -> &Set {
-		&self.unseen
+	pub const fn set(&self) -> &Set {
+		&self.set
 	}
 
 	pub fn restrict<I: IntoIterator<Item = usize>>(&mut self, set: I) {
-		self.unseen.clear();
-		self.unseen.extend(set);
+		self.set.clear();
+		self.set.extend(set);
 	}
 
 	pub fn run<T, H>(&mut self, nodes: &DataFlowGraph<T>, start: Id, mut handler: H)
 	where
 		T: Parameters,
-		H: FnMut(Id, bool),
+		H: FnMut(Event),
 	{
-		self.queue_item(nodes, start, &mut handler);
+		self.queue_node(nodes, start);
 
 		while let Some(mut item) = self.items.pop() {
-			if let Some(parameter) = item.parameters.pop() {
+			if let Some(parameter) = item.parameters.next_back() {
 				self.items.push(item);
 
-				self.queue_item(nodes, parameter, &mut handler);
+				self.queue_node(nodes, self.parameters[parameter]);
 			} else {
-				handler(item.id, true);
+				handler(item.event);
 
-				self.vec_pooled.push(item.parameters);
+				self.parameters.truncate(item.parameters.start);
 			}
 		}
 	}
@@ -95,7 +150,7 @@ mod tests {
 
 	use crate::collection::{data_flow_graph::DataFlowGraph, link::Link, node::Parameters};
 
-	use super::DepthFirstSearcher;
+	use super::{DepthFirstSearcher, Event};
 
 	enum Simple {
 		Leaf,
@@ -118,43 +173,41 @@ mod tests {
 	#[test]
 	fn test_is_in_order() {
 		let mut nodes = DataFlowGraph::<Simple>::new();
-		let mut expected = [0; 6];
+		let mut real = [0; 6];
+		let mut result = [0; 6];
 
-		let value_1 = nodes.add_simple(Simple::Leaf);
-		let value_2 = nodes.add_simple(Simple::Ref(value_1));
+		let node_0 = nodes.add_simple(Simple::Leaf);
+		let node_1 = nodes.add_simple(Simple::Ref(node_0));
 
-		expected[value_1.node] = 1;
-		expected[value_2.node] = 2;
+		real[node_0.node] = 3;
+		real[node_1.node] = 4;
 
-		let value_3 = nodes.add_simple(Simple::Leaf);
-		let value_4 = nodes.add_simple(Simple::Leaf);
+		let node_2 = nodes.add_simple(Simple::Leaf);
+		let node_3 = nodes.add_simple(Simple::Leaf);
 
-		expected[value_3.node] = 3;
-		expected[value_4.node] = 4;
+		real[node_2.node] = 5;
+		real[node_3.node] = 6;
 
-		let value_5 = nodes.add_simple(Simple::Leaf);
-		let gamma = nodes.add_gamma(
-			vec![value_5],
-			tiny_vec![vec![value_2], vec![value_3, value_4]],
-		);
+		let node_4 = nodes.add_simple(Simple::Leaf);
+		let node_5 = nodes.add_gamma(vec![node_4], tiny_vec![vec![node_1], vec![node_2, node_3]]);
 
-		expected[value_5.node] = 5;
-		expected[gamma.node] = 6;
+		real[node_4.node] = 1;
+		real[node_5.node] = 2;
 
 		let mut searcher = DepthFirstSearcher::new();
 		let mut counter = 0;
 
 		searcher.restrict(0..nodes.indices_needed());
-		searcher.run(&nodes, gamma.node, |id, post| {
-			if !post {
-				return;
+		searcher.run(&nodes, node_5.node, |event| {
+			if let Event::PostNode { id } = event {
+				println!("POST {id}");
+
+				counter += 1;
+
+				result[id] = counter;
 			}
-
-			counter += 1;
-
-			assert_eq!(expected[id], counter, "Node {id} was not in order");
 		});
 
-		assert_eq!(counter, 6, "Not all nodes were visited");
+		assert_eq!(result, real);
 	}
 }
