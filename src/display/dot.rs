@@ -184,10 +184,10 @@ impl Dot {
 		for &id in &self.nodes {
 			if let Some(results) = nodes[id].as_results() {
 				for (index_1, result) in results.iter().enumerate() {
-					writeln!(write, "\tR{index_1}_{id}:e -> {id}:w;")?;
+					writeln!(write, "\tR{index_1}_{id} -> {id}:e;")?;
 
 					for (index_2, Link { node, port }) in result.iter().enumerate() {
-						writeln!(write, "\t{node}:O{port}:s -> R{index_1}_{id}:I{index_2}:n;")?;
+						writeln!(write, "\t{node}:O{port} -> R{index_1}_{id}:I{index_2};")?;
 					}
 				}
 			}
@@ -243,7 +243,7 @@ impl Dot {
 		writeln!(write, "digraph {{")?;
 		writeln!(
 			write,
-			"\tnode [shape = plain, style = filled, ordering = in, color = \"#FFFFFF\", fontcolor = \"#FFFFFF\"];"
+			"\tnode [shape = plain, style = filled, ordering = out, color = \"#FFFFFF\", fontcolor = \"#FFFFFF\"];"
 		)?;
 
 		self.find_topological(nodes, start);
