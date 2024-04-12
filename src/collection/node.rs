@@ -1,4 +1,4 @@
-use tinyvec::TinyVec;
+use list::resizable::Resizable;
 
 use super::link::Link;
 
@@ -140,7 +140,7 @@ macro_rules! impl_compound {
 /// All other parameters are passed into the user-defined start node.
 pub struct Gamma {
 	pub parameters: Vec<Link>,
-	pub results: TinyVec<[Vec<Link>; 2]>,
+	pub results: Resizable<Vec<Link>, 2>,
 }
 
 impl_compound!(Gamma, NotGammaError);

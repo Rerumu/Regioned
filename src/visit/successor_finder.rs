@@ -1,10 +1,10 @@
-use tinyvec::TinyVec;
+use list::resizable::Resizable;
 
 use crate::collection::{data_flow_graph::DataFlowGraph, link::Id, node::Parameters};
 
 use super::depth_first_searcher::{DepthFirstSearcher, Event};
 
-pub type SuccessorList = TinyVec<[Id; 2]>;
+pub type SuccessorList = Resizable<Id, 2>;
 
 /// A node successor finder.
 /// It caches the successors for each node after a traversal.

@@ -1,5 +1,5 @@
 use arena::collection::Arena;
-use tinyvec::TinyVec;
+use list::resizable::Resizable;
 
 use super::{
 	link::{Id, Link},
@@ -55,7 +55,7 @@ impl<T> DataFlowGraph<T> {
 	/// Adds a [`Node::Gamma`] node to the graph and returns its [`Link`].
 	#[inline]
 	#[must_use]
-	pub fn add_gamma(&mut self, parameters: Vec<Link>, results: TinyVec<[Vec<Link>; 2]>) -> Link {
+	pub fn add_gamma(&mut self, parameters: Vec<Link>, results: Resizable<Vec<Link>, 2>) -> Link {
 		let node = Node::Gamma(Gamma {
 			parameters,
 			results,

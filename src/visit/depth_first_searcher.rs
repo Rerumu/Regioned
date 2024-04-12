@@ -146,8 +146,6 @@ impl Default for DepthFirstSearcher {
 
 #[cfg(test)]
 mod tests {
-	use tinyvec::tiny_vec;
-
 	use crate::collection::{data_flow_graph::DataFlowGraph, link::Link, node::Parameters};
 
 	use super::{DepthFirstSearcher, Event};
@@ -189,7 +187,10 @@ mod tests {
 		real[node_3.node] = 6;
 
 		let node_4 = nodes.add_simple(Simple::Leaf);
-		let node_5 = nodes.add_gamma(vec![node_4], tiny_vec![vec![node_1], vec![node_2, node_3]]);
+		let node_5 = nodes.add_gamma(
+			vec![node_4],
+			[vec![node_1], vec![node_2, node_3]].into_iter().collect(),
+		);
 
 		real[node_4.node] = 1;
 		real[node_5.node] = 2;
