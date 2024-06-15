@@ -5,15 +5,15 @@ edition = "2021"
 
 [dependencies.arena]
 git = "https://github.com/Rerumu/Arena.git"
-rev = "471b9e1"
+rev = "0f02011"
 
 [dependencies.set]
 git = "https://github.com/Rerumu/Set.git"
-rev = "492b2f8"
+rev = "0e6d012"
 
 [dependencies.list]
 git = "https://github.com/Rerumu/List.git"
-rev = "63a9a13"
+rev = "2464410"
 
 [features]
 display = []

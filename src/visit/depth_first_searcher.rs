@@ -90,7 +90,9 @@ impl DepthFirstSearcher {
 	}
 
 	fn queue_node<T: Parameters>(&mut self, nodes: &DataFlowGraph<T>, id: Id) {
-		if !self.set.remove(id.index().try_into_unchecked()) {
+		let index = id.index().try_into_unchecked();
+
+		if !self.set.remove(index).unwrap_or(false) {
 			return;
 		}
 

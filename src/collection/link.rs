@@ -6,7 +6,7 @@ pub type Id = arena::referent::Id<u32, std::num::NonZeroU64>;
 #[cfg(not(debug_assertions))]
 pub type Id = arena::referent::Id<u32, arena::referent::Nil>;
 
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Link {
 	pub node: Id,
 	pub port: u16,
@@ -15,11 +15,26 @@ pub struct Link {
 impl Link {
 	#[inline]
 	#[must_use]
+	pub const fn dangling() -> Self {
+		Self {
+			node: Id::dangling(),
+			port: 0,
+		}
+	}
+
+	#[inline]
+	#[must_use]
 	pub const fn iter(self) -> Iter {
 		Iter {
 			node: self.node,
 			ports: self.port..u16::MAX,
 		}
+	}
+}
+
+impl Default for Link {
+	fn default() -> Self {
+		Self::dangling()
 	}
 }
 
