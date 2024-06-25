@@ -67,7 +67,7 @@ impl ReverseTopological {
 		let compound = nodes[id].as_compound().unwrap();
 		let index = index + 1;
 
-		if let Some(region) = compound.regions().iter().nth(index - 1).copied() {
+		if let Some(region) = compound.regions().get(index - 1).copied() {
 			self.stack.push(Entry::Regions { id, index });
 
 			self.add_region(region);
