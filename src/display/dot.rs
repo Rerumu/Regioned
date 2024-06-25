@@ -101,25 +101,31 @@ impl Dot {
 		}
 	}
 
-	fn find_topological<T: Parameters>(&mut self, nodes: &DataFlowGraph<T>, start: Id) {
+	fn find_topological<T, I>(&mut self, nodes: &DataFlowGraph<T>, results: I)
+	where
+		T: Parameters,
+		I: IntoIterator<Item = Id>,
+	{
 		self.labels.clear();
 		self.nodes.clear();
 
 		self.depth_first_searcher
 			.restrict(0..nodes.indices_needed());
 
-		let mut label = Label::A;
+		for id in results {
+			let mut label = Label::A;
 
-		self.depth_first_searcher
-			.run(nodes, start, |event| match event {
-				Event::PreNode { id } => {
-					self.labels.push(label);
-					self.nodes.push(id);
-				}
-				Event::PostNode { .. } => {}
-				Event::PreRegion { .. } => label = label.next(),
-				Event::PostRegion { .. } => label = label.previous(),
-			});
+			self.depth_first_searcher
+				.run(nodes, id, |event| match event {
+					Event::PreNode { id } => {
+						self.labels.push(label);
+						self.nodes.push(id);
+					}
+					Event::PostNode { .. } => {}
+					Event::PreRegion { .. } => label = label.next(),
+					Event::PostRegion { .. } => label = label.previous(),
+				});
+		}
 	}
 
 	fn find_ports<T: Parameters>(&mut self, nodes: &DataFlowGraph<T>) {
@@ -231,14 +237,15 @@ impl Dot {
 	/// # Errors
 	///
 	/// Returns an error if the writer fails to write.
-	pub fn write<T>(
+	pub fn write<T, I>(
 		&mut self,
 		write: &mut dyn Write,
 		nodes: &DataFlowGraph<T>,
-		start: Id,
+		results: I,
 	) -> Result<()>
 	where
 		T: Parameters + Description,
+		I: IntoIterator<Item = Id>,
 	{
 		writeln!(write, "digraph {{")?;
 		writeln!(
@@ -246,7 +253,7 @@ impl Dot {
 			"\tnode [shape = plain, style = filled, ordering = out, color = \"#FFFFFF\", fontcolor = \"#FFFFFF\"];"
 		)?;
 
-		self.find_topological(nodes, start);
+		self.find_topological(nodes, results);
 		self.find_ports(nodes);
 		self.write_node_bodies(write, nodes)?;
 		self.write_node_links(write, nodes)?;
