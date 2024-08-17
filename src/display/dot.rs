@@ -106,11 +106,13 @@ impl Dot {
 		T: Parameters,
 		I: IntoIterator<Item = Id>,
 	{
+		let active = self.depth_first_searcher.nodes_mut();
+
+		active.clear();
+		active.extend(0..nodes.indices_needed());
+
 		self.labels.clear();
 		self.nodes.clear();
-
-		self.depth_first_searcher
-			.restrict(0..nodes.indices_needed());
 
 		for id in results {
 			let mut label = Label::A;
@@ -213,10 +215,10 @@ impl Dot {
 		writeln!(write, "\tsubgraph outliers {{")?;
 		writeln!(write, "\t\tnode [fillcolor = \"#000000\"];")?;
 
-		let set = self.depth_first_searcher.set();
+		let active = self.depth_first_searcher.nodes();
 
 		for (id, node) in nodes.iter() {
-			if !set.contains(id.index().try_into_unchecked()) {
+			if !active.contains(id.index().try_into_unchecked()) {
 				continue;
 			}
 

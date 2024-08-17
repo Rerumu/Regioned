@@ -44,7 +44,11 @@ impl SuccessorFinder {
 			self.cache.resize_with(needed, SuccessorList::new);
 		}
 
-		searcher.restrict(0..needed);
+		let active = searcher.nodes_mut();
+
+		active.clear();
+		active.extend(0..needed);
+
 		searcher.run(nodes, start, |event| {
 			let Event::PreNode { id } = event else { return };
 

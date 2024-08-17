@@ -26,14 +26,14 @@ pub enum Event {
 	PostRegion { id: Id, region: usize },
 }
 
-struct Item {
+struct Visit {
 	event: Event,
 	parameters: Range<usize>,
 }
 
 pub struct DepthFirstSearcher {
-	items: Vec<Item>,
-	set: Set,
+	visits: Vec<Visit>,
+	nodes: Set,
 
 	parameters: Vec<Id>,
 }
@@ -43,8 +43,8 @@ impl DepthFirstSearcher {
 	#[must_use]
 	pub const fn new() -> Self {
 		Self {
-			items: Vec::new(),
-			set: Set::new(),
+			visits: Vec::new(),
+			nodes: Set::new(),
 
 			parameters: Vec::new(),
 		}
@@ -53,7 +53,7 @@ impl DepthFirstSearcher {
 	fn queue_pre_node(&mut self, id: Id) {
 		let parameters = self.parameters.len()..self.parameters.len();
 
-		self.items.push(Item {
+		self.visits.push(Visit {
 			event: Event::PreNode { id },
 			parameters,
 		});
@@ -65,7 +65,7 @@ impl DepthFirstSearcher {
 			nodes[id].parameters().map(|link| link.node),
 		);
 
-		self.items.push(Item {
+		self.visits.push(Visit {
 			event: Event::PostNode { id },
 			parameters,
 		});
@@ -74,7 +74,7 @@ impl DepthFirstSearcher {
 	fn queue_pre_region(&mut self, id: Id, region: usize) {
 		let parameters = self.parameters.len()..self.parameters.len();
 
-		self.items.push(Item {
+		self.visits.push(Visit {
 			event: Event::PreRegion { id, region },
 			parameters,
 		});
@@ -83,7 +83,7 @@ impl DepthFirstSearcher {
 	fn queue_post_region(&mut self, id: Id, region: usize, list: &[Link]) {
 		let parameters = store_iterator(&mut self.parameters, list.iter().map(|link| link.node));
 
-		self.items.push(Item {
+		self.visits.push(Visit {
 			event: Event::PostRegion { id, region },
 			parameters,
 		});
@@ -92,7 +92,7 @@ impl DepthFirstSearcher {
 	fn queue_node<T: Parameters>(&mut self, nodes: &DataFlowGraph<T>, id: Id) {
 		let index = id.index().try_into_unchecked();
 
-		if !self.set.remove(index).unwrap_or(false) {
+		if !self.nodes.remove(index).unwrap_or(false) {
 			return;
 		}
 
@@ -107,15 +107,14 @@ impl DepthFirstSearcher {
 		self.queue_pre_node(id);
 	}
 
-	#[inline]
 	#[must_use]
-	pub const fn set(&self) -> &Set {
-		&self.set
+	pub const fn nodes(&self) -> &Set {
+		&self.nodes
 	}
 
-	pub fn restrict<I: IntoIterator<Item = usize>>(&mut self, set: I) {
-		self.set.clear();
-		self.set.extend(set);
+	#[must_use]
+	pub fn nodes_mut(&mut self) -> &mut Set {
+		&mut self.nodes
 	}
 
 	pub fn run<T, H>(&mut self, nodes: &DataFlowGraph<T>, start: Id, mut handler: H)
@@ -123,17 +122,21 @@ impl DepthFirstSearcher {
 		T: Parameters,
 		H: FnMut(Event),
 	{
+		if !self.nodes.contains(start.index().try_into_unchecked()) {
+			return;
+		}
+
 		self.queue_node(nodes, start);
 
-		while let Some(mut item) = self.items.pop() {
-			if let Some(parameter) = item.parameters.next_back() {
-				self.items.push(item);
+		while let Some(mut visit) = self.visits.pop() {
+			if let Some(parameter) = visit.parameters.next_back() {
+				self.visits.push(visit);
 
 				self.queue_node(nodes, self.parameters[parameter]);
 			} else {
-				handler(item.event);
+				handler(visit.event);
 
-				self.parameters.truncate(item.parameters.start);
+				self.parameters.truncate(visit.parameters.start);
 			}
 		}
 	}
@@ -200,7 +203,11 @@ mod tests {
 		let mut searcher = DepthFirstSearcher::new();
 		let mut counter = 0;
 
-		searcher.restrict(0..nodes.indices_needed());
+		let active = searcher.nodes_mut();
+
+		active.clear();
+		active.extend(0..nodes.indices_needed());
+
 		searcher.run(&nodes, node_5.node, |event| {
 			if let Event::PostNode { id } = event {
 				println!("POST {id}");
